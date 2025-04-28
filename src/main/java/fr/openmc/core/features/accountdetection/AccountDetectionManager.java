@@ -78,14 +78,21 @@ public class AccountDetectionManager implements Listener {
         Player player = event.getPlayer();
         String ip = Objects.requireNonNull(player.getAddress()).getHostString();
         if (exemptedPlayers.contains(player.getUniqueId())) return;
-        if (isAntiDoubleAccountEnabled) {
-            if (ipMap.containsKey(ip) && !ipMap.get(ip).equals(player.getUniqueId())) {
-                handleDoubleAccount(Bukkit.getOfflinePlayer(ipMap.get(ip)), player);
-            } else if (!ipMap.containsKey(ip)) {
-                ipMap.inverse().put(player.getUniqueId(), ip);
-            }
-        }
+        if (isAntiDoubleAccountEnabled) verifyAccount(ip, player);
         if (isAntiVpnEnabled) verifyIpAddress(ip, player);
+    }
+
+    private void verifyAccount(String ip, Player player){
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (ipMap.containsKey(ip) && !ipMap.get(ip).equals(player.getUniqueId())) {
+                    handleDoubleAccount(Bukkit.getOfflinePlayer(ipMap.get(ip)), player);
+                } else if (!ipMap.containsKey(ip)) {
+                    ipMap.inverse().put(player.getUniqueId(), ip);
+                }
+            }
+        }.runTaskAsynchronously(plugin);
     }
 
     private void handleDoubleAccount(OfflinePlayer firstPlayer, Player secondPlayer) {
