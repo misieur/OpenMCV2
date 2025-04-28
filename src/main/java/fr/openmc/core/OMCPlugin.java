@@ -1,6 +1,7 @@
 package fr.openmc.core;
 
 import dev.xernas.menulib.MenuLib;
+import fr.openmc.core.features.accountdetection.AccountDetectionManager;
 import fr.openmc.core.features.leaderboards.LeaderboardManager;
 import fr.openmc.core.features.adminshop.AdminShopManager;
 import fr.openmc.core.features.scoreboards.ScoreboardManager;
@@ -76,6 +77,7 @@ public class OMCPlugin extends JavaPlugin {
         new TabList();
         new LeaderboardManager(this);
         new AdminShopManager(this);
+        new AccountDetectionManager(this);
 
         contestPlayerManager.setContestManager(contestManager); // else ContestPlayerManager crash because ContestManager is null
         contestManager.setContestPlayerManager(contestPlayerManager);
