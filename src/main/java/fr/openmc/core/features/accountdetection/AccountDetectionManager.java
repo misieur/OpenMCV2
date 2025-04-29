@@ -8,7 +8,13 @@ import fr.openmc.core.CommandsManager;
 import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.accountdetection.commands.AccountDetectionCommand;
 import fr.openmc.core.utils.DiscordWebhook;
+import fr.openmc.core.utils.messages.MessageType;
+import fr.openmc.core.utils.messages.MessagesManager;
+import fr.openmc.core.utils.messages.Prefix;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -82,13 +88,15 @@ public class AccountDetectionManager implements Listener {
         if (isAntiVpnEnabled) verifyIpAddress(ip, player);
     }
 
-    private void verifyAccount(String ip, Player player){
+    private void verifyAccount(String ip, Player player) {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (ipMap.containsKey(ip) && !ipMap.get(ip).equals(player.getUniqueId())) {
-                    handleDoubleAccount(Bukkit.getOfflinePlayer(ipMap.get(ip)), player);
-                } else if (!ipMap.containsKey(ip)) {
+                if (ipMap.containsKey(ip)) {
+                    if (!ipMap.get(ip).equals(player.getUniqueId())) {
+                        handleDoubleAccount(Bukkit.getOfflinePlayer(ipMap.get(ip)), player);
+                    }
+                } else {
                     ipMap.inverse().put(player.getUniqueId(), ip);
                 }
             }
@@ -96,8 +104,10 @@ public class AccountDetectionManager implements Listener {
     }
 
     private void handleDoubleAccount(OfflinePlayer firstPlayer, Player secondPlayer) {
-        secondPlayer.sendMessage("§cOn dirait que vous utilisez un double compte, nous tenons à rappeler que cela est strictement interdit, §naucune sanction ne vous est donnée pour le moment§r§c, des modérateurs appliquerons une sanction si c'est bien le cas.");
-        plugin.getLogger().warning("Double compte détecté: " + firstPlayer.getName() + " et " + secondPlayer.getName());
+        Component message = Component.text("On dirait que vous utilisez un double compte, nous tenons à rappeler que cela est strictement interdit, ").color(NamedTextColor.RED)
+                .append(Component.text("aucune sanction ne vous est donnée pour le moment").color(NamedTextColor.RED).decorate(TextDecoration.UNDERLINED))
+                .append(Component.text(", des modérateurs appliquerons une sanction si c'est bien le cas.").color(NamedTextColor.RED));
+        MessagesManager.sendMessage(secondPlayer, message, Prefix.ACCOUTDETECTION, MessageType.WARNING, true);
         try {
             DiscordWebhook.sendMessage(webhookUrl, "Double compte détecté: " + firstPlayer.getName() + " et " + secondPlayer.getName());
         } catch (Exception e) {
@@ -106,8 +116,10 @@ public class AccountDetectionManager implements Listener {
     }
 
     private void handleVpn(Player player) {
-        player.sendMessage("§cOn dirait que vous utilisez un VPN, nous tenons à vous rappeler que cela est strictement interdit, des modérateurs vont s'en charger, §naucune sanction ne vous est donnée pour le moment§r§c.");
-        plugin.getLogger().warning("Vpn détecté: " + player.getName() + " plus d'info: https://api.ipapi.is/?q=" + Objects.requireNonNull(player.getAddress()).getHostString());
+        Component message = Component.text("On dirait que vous utilisez un VPN, nous tenons à rappeler que cela est strictement interdit, ").color(NamedTextColor.RED)
+                .append(Component.text("aucune sanction ne vous est donnée pour le moment").color(NamedTextColor.RED).decorate(TextDecoration.UNDERLINED))
+                .append(Component.text(", des modérateurs appliquerons une sanction si c'est bien le cas.").color(NamedTextColor.RED));
+        MessagesManager.sendMessage(player, message, Prefix.ACCOUTDETECTION, MessageType.WARNING, true);
         try {
             DiscordWebhook.sendMessage(webhookUrl, "Vpn détecté: " + player.getName() + " plus d'info: ||https://api.ipapi.is/?q=" + Objects.requireNonNull(player.getAddress()).getHostString() + "||");
             // L'adresse ip avec un spoiler mais vu que c'est un VPN on s'en fout de leak aux modos l'Ip c'est sa faute. ;)

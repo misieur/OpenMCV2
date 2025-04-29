@@ -16,13 +16,13 @@ public class AccountDetectionCommand {
     void mainCommand(CommandSender sender) {
         sender.sendMessage("§cVeuillez spécifier une commande valide.");
     }
-    @CommandPermission("op")
+    @CommandPermission("omc.admin.commands.accountdetection.reload")
     @Subcommand("reload")
     void reloadCommand(CommandSender sender) {
         AccountDetectionManager.getInstance().reload();
         sender.sendMessage("§aLa configuration a été rechargée.");
     }
-    @CommandPermission("omc.modo")
+    @CommandPermission("omc.commands.accountdetection.exemptplayer")
     @Subcommand("exemptePlayer")
     void exemptPlayerCommand(CommandSender sender, Player player) {
         try {
