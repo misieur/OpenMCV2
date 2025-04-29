@@ -72,6 +72,12 @@ public class AccountDetectionManager implements Listener {
         exemptedPlayers = config.getStringList("exempted-players").stream().map(UUID::fromString).collect(Collectors.toSet());
     }
 
+    /**
+     * Ajoute un joueur qui sera exempté lors de la vérification des doubles comptes/Vpn
+     *
+     * @param playersUUID l'UUID du joueur à exempter
+     * @throws IOException si il y a une erreur lors de la sauvegarde
+     */
     public void addExemptedPlayer(UUID playersUUID) throws IOException {
         exemptedPlayers.add(playersUUID);
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -88,6 +94,12 @@ public class AccountDetectionManager implements Listener {
         if (isAntiVpnEnabled) verifyIpAddress(ip, player);
     }
 
+    /**
+     * Fonction asynchrone qui vérifie si le joueur a un double compte et exécute handleDoubleAccount si c'est le cas
+     *
+     * @param ip l'Ip de joueur au format texte
+     * @param player le joueur à vérifier
+     */
     private void verifyAccount(String ip, Player player) {
         new BukkitRunnable() {
             @Override
@@ -103,6 +115,12 @@ public class AccountDetectionManager implements Listener {
         }.runTaskAsynchronously(plugin);
     }
 
+    /**
+     * Code exécuté quand le joueur utilise un double compte
+     *
+     * @param firstPlayer c'est le joueur qui s'était connecté avant avec la même Ip que secondPlayer
+     * @param secondPlayer c'est le joueur qui vient de se connecter avec la même Ip que firstPlayer
+     */
     private void handleDoubleAccount(OfflinePlayer firstPlayer, Player secondPlayer) {
         Component message = Component.text("On dirait que vous utilisez un double compte, nous tenons à rappeler que cela est strictement interdit, ").color(NamedTextColor.RED)
                 .append(Component.text("aucune sanction ne vous est donnée pour le moment").color(NamedTextColor.RED).decorate(TextDecoration.UNDERLINED))
@@ -115,6 +133,11 @@ public class AccountDetectionManager implements Listener {
         }
     }
 
+    /**
+     * Code exécuté quand le serveur détecte un Vpn
+     *
+     * @param player Le joueur qui a un Vpn
+     */
     private void handleVpn(Player player) {
         Component message = Component.text("On dirait que vous utilisez un VPN, nous tenons à rappeler que cela est strictement interdit, ").color(NamedTextColor.RED)
                 .append(Component.text("aucune sanction ne vous est donnée pour le moment").color(NamedTextColor.RED).decorate(TextDecoration.UNDERLINED))
@@ -128,6 +151,12 @@ public class AccountDetectionManager implements Listener {
         }
     }
 
+    /**
+     * Vérifie si l'Ip est un VPN ou un proxy (etc) grâce à l'api ipapi.is.
+     *
+     * @param ip L'Ip du joueur
+     * @param player Le joueur
+     */
     private void verifyIpAddress(String ip, Player player) {
         new BukkitRunnable() {
             @Override
