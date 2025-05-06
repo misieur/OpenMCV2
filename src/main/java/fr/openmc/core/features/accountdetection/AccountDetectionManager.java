@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -54,6 +55,25 @@ public class AccountDetectionManager implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         CommandsManager.getHandler().register(new AccountDetectionCommand());
         loadConfig();
+    }
+
+    public static JsonObject getVpnApiResponse(String ip) throws IOException, URISyntaxException {
+        HttpsURLConnection con = (HttpsURLConnection) new URI("https://de.ipapi.is/?q=" + ip)
+                .toURL()
+                .openConnection(); // 1000 requêtes par jours sans api key avec une moyenne de 500ms de réponse quand j'ai testé
+        con.setRequestMethod("GET");
+        con.setConnectTimeout(5000);
+        con.setReadTimeout(5000);
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = in.readLine()) != null) {
+            sb.append(line);
+        }
+        in.close();
+        String body = sb.toString();
+        return JsonParser.parseString(body).getAsJsonObject();
     }
 
     private void loadConfig() {
@@ -97,7 +117,7 @@ public class AccountDetectionManager implements Listener {
     /**
      * Fonction asynchrone qui vérifie si le joueur a un double compte et exécute handleDoubleAccount si c'est le cas
      *
-     * @param ip l'Ip de joueur au format texte
+     * @param ip     l'Ip de joueur au format texte
      * @param player le joueur à vérifier
      */
     private void verifyAccount(String ip, Player player) {
@@ -118,7 +138,7 @@ public class AccountDetectionManager implements Listener {
     /**
      * Code exécuté quand le joueur utilise un double compte
      *
-     * @param firstPlayer c'est le joueur qui s'était connecté avant avec la même Ip que secondPlayer
+     * @param firstPlayer  c'est le joueur qui s'était connecté avant avec la même Ip que secondPlayer
      * @param secondPlayer c'est le joueur qui vient de se connecter avec la même Ip que firstPlayer
      */
     private void handleDoubleAccount(OfflinePlayer firstPlayer, Player secondPlayer) {
@@ -127,7 +147,7 @@ public class AccountDetectionManager implements Listener {
                 .append(Component.text(", des modérateurs appliquerons une sanction si c'est bien le cas.").color(NamedTextColor.RED));
         MessagesManager.sendMessage(secondPlayer, message, Prefix.ACCOUTDETECTION, MessageType.WARNING, true);
         try {
-            DiscordWebhook.sendMessage(webhookUrl, "Double compte détecté: " + firstPlayer.getName() + " et " + secondPlayer.getName());
+            DiscordWebhook.sendMessage(webhookUrl, "Double compte détecté: `" + firstPlayer.getName() + "` et `" + secondPlayer.getName() + "`");
         } catch (Exception e) {
             plugin.getLogger().warning("Impossible d'envoyer le message sur Discord: " + e.getMessage());
         }
@@ -138,14 +158,16 @@ public class AccountDetectionManager implements Listener {
      *
      * @param player Le joueur qui a un Vpn
      */
-    private void handleVpn(Player player) {
+    private void handleVpn(Player player, String detectedFlags) {
         Component message = Component.text("On dirait que vous utilisez un VPN, nous tenons à rappeler que cela est strictement interdit, ").color(NamedTextColor.RED)
                 .append(Component.text("aucune sanction ne vous est donnée pour le moment").color(NamedTextColor.RED).decorate(TextDecoration.UNDERLINED))
                 .append(Component.text(", des modérateurs appliquerons une sanction si c'est bien le cas.").color(NamedTextColor.RED));
         MessagesManager.sendMessage(player, message, Prefix.ACCOUTDETECTION, MessageType.WARNING, true);
         try {
-            DiscordWebhook.sendMessage(webhookUrl, "Vpn détecté: " + player.getName() + " plus d'info: ||https://api.ipapi.is/?q=" + Objects.requireNonNull(player.getAddress()).getHostString() + "||");
-            // L'adresse ip avec un spoiler mais vu que c'est un VPN on s'en fout de leak aux modos l'Ip c'est sa faute. ;)
+            DiscordWebhook.sendMessage(
+                    webhookUrl,
+                    "Vpn détecté: " + player.getName() + " (flags: " + detectedFlags + "). Pour plus d'information exécutez `/accountdetection check " + player.getName() + "` sur le serveur minecraft."
+            );
         } catch (Exception e) {
             plugin.getLogger().warning("Impossible d'envoyer le message sur Discord: " + e.getMessage());
         }
@@ -154,7 +176,7 @@ public class AccountDetectionManager implements Listener {
     /**
      * Vérifie si l'Ip est un VPN ou un proxy (etc) grâce à l'api ipapi.is.
      *
-     * @param ip L'Ip du joueur
+     * @param ip     L'Ip du joueur
      * @param player Le joueur
      */
     private void verifyIpAddress(String ip, Player player) {
@@ -162,28 +184,17 @@ public class AccountDetectionManager implements Listener {
             @Override
             public void run() {
                 try {
-                    HttpsURLConnection con = (HttpsURLConnection) new URI("https://de.ipapi.is/?q=" + ip)
-                            .toURL()
-                            .openConnection(); // 1000 requêtes par jours sans api key avec une moyenne de 500ms de réponse quand j'ai testé
-                    con.setRequestMethod("GET");
-                    con.setConnectTimeout(5000);
-                    con.setReadTimeout(5000);
-
-                    BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = in.readLine()) != null) {
-                        sb.append(line);
+                    JsonObject json = getVpnApiResponse(ip);
+                    StringBuilder flags = new StringBuilder();
+                    if (json.get("is_vpn").getAsBoolean()) flags.append("vpn, ");
+                    if (json.get("is_proxy").getAsBoolean()) flags.append("proxy, ");
+                    if (json.get("is_datacenter").getAsBoolean()) flags.append("datacenter, ");
+                    if (json.get("is_tor").getAsBoolean()) flags.append("tor, ");
+                    if (json.get("is_abuser").getAsBoolean()) flags.append("abuser, ");
+                    if (!flags.isEmpty()) {
+                        flags.setLength(flags.length() - 2); // retire le dernier ", "
+                        handleVpn(player, flags.toString());
                     }
-                    in.close();
-                    String body = sb.toString();
-                    JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-                    if (json.get("is_vpn").getAsBoolean()
-                            || json.get("is_proxy").getAsBoolean()
-                            || json.get("is_datacenter").getAsBoolean()
-                            || json.get("is_tor").getAsBoolean()
-                            || json.get("is_abuser").getAsBoolean())
-                        handleVpn(player);
                 } catch (Exception e) {
                     plugin.getLogger().warning("Impossible de vérifier l'adresse IP: " + e.getMessage());
                 }
