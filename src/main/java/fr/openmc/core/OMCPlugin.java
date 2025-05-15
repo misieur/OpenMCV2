@@ -10,6 +10,9 @@ import fr.openmc.core.features.city.mascots.MascotsManager;
 import fr.openmc.core.features.contest.managers.ContestManager;
 import fr.openmc.core.features.contest.managers.ContestPlayerManager;
 import fr.openmc.core.features.economy.BankManager;
+import fr.openmc.core.features.corporation.manager.CompanyManager;
+import fr.openmc.core.features.corporation.manager.PlayerShopManager;
+import fr.openmc.core.features.corporation.manager.ShopBlocksManager;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.commands.utils.SpawnManager;
 import fr.openmc.core.features.friend.FriendManager;
@@ -29,6 +32,7 @@ import fr.openmc.core.utils.MotdUtils;
 import fr.openmc.core.utils.freeze.FreezeManager;
 import fr.openmc.core.utils.translation.TranslationManager;
 import lombok.Getter;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -82,16 +86,25 @@ public class OMCPlugin extends JavaPlugin {
         new AdminShopManager(this);
         new MainMenu(this);
 
+        if (!OMCPlugin.isUnitTestVersion()){
+            new ShopBlocksManager(this);
+            new PlayerShopManager();
+            new CompanyManager();// laisser apres Economy Manager
+        }
         contestPlayerManager.setContestManager(contestManager); // else ContestPlayerManager crash because ContestManager is null
         contestManager.setContestPlayerManager(contestPlayerManager);
         new MotdUtils(this);
         translationManager = new TranslationManager(this, new File(this.getDataFolder(), "translations"), "fr");
         translationManager.loadAllLanguages();
+
         getLogger().info("Plugin activé");
     }
 
     @Override
     public void onDisable() {
+        CompanyManager.saveAllCompanies();
+        CompanyManager.saveAllShop();
+
         HomesManager.getInstance().saveHomesData();
         ContestManager.getInstance().saveContestData();
         ContestManager.getInstance().saveContestPlayerData();
@@ -99,7 +112,6 @@ public class OMCPlugin extends JavaPlugin {
 
         MascotsManager.saveMascots(MascotsManager.mascots);
         CityManager.saveFreeClaims(CityManager.freeClaim);
-
 
         CubeListener.clearCube(CubeListener.currentLocation);
         if (dbManager != null) {
