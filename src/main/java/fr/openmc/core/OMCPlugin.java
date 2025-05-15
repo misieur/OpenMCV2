@@ -81,11 +81,12 @@ public class OMCPlugin extends JavaPlugin {
         new FriendManager();
         new QuestsManager();
         new TabList();
-        if (!OMCPlugin.isUnitTestVersion())
+        if (!OMCPlugin.isUnitTestVersion()) { // Tous les trucs faits par misieur qui fonctionne à peu près
             new LeaderboardManager(this);
+            new AnotherMenuLib(this);
+        }
         new AdminShopManager(this);
         new MainMenu(this);
-        new AnotherMenuLib(this);
 
         if (!OMCPlugin.isUnitTestVersion()){
             new ShopBlocksManager(this);
