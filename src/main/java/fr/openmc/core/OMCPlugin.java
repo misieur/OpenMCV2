@@ -1,6 +1,5 @@
 package fr.openmc.core;
 
-import dev.xernas.menulib.MenuLib;
 import fr.openmc.core.features.accountdetection.AccountDetectionManager;
 import fr.openmc.api.menulib.MenuLib;
 import fr.openmc.core.features.leaderboards.LeaderboardManager;
@@ -33,7 +32,6 @@ import fr.openmc.core.utils.MotdUtils;
 import fr.openmc.core.utils.freeze.FreezeManager;
 import fr.openmc.core.utils.translation.TranslationManager;
 import lombok.Getter;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
