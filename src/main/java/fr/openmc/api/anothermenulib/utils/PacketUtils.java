@@ -1,4 +1,4 @@
-package fr.openmc.anothermenulib.utils;
+package fr.openmc.api.anothermenulib.utils;
 
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.core.HolderLookup;

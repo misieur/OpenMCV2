@@ -1,6 +1,6 @@
 package fr.openmc.core;
 
-import fr.openmc.anothermenulib.AnotherMenuLib;
+import fr.openmc.api.anothermenulib.AnotherMenuLib;
 import fr.openmc.api.menulib.MenuLib;
 import fr.openmc.core.features.leaderboards.LeaderboardManager;
 import fr.openmc.core.features.adminshop.AdminShopManager;

@@ -1,11 +1,11 @@
 package fr.openmc.core.features.mainmenu.menus;
 
-import fr.openmc.anothermenulib.AnotherMenuLib;
-import fr.openmc.anothermenulib.events.InventoryClickEvent;
-import fr.openmc.anothermenulib.events.InventoryCloseEvent;
-import fr.openmc.anothermenulib.menu.ClickType;
-import fr.openmc.anothermenulib.menu.InventoryType;
-import fr.openmc.anothermenulib.menu.Menu;
+import fr.openmc.api.anothermenulib.AnotherMenuLib;
+import fr.openmc.api.anothermenulib.events.InventoryClickEvent;
+import fr.openmc.api.anothermenulib.events.InventoryCloseEvent;
+import fr.openmc.api.anothermenulib.menu.ClickType;
+import fr.openmc.api.anothermenulib.menu.InventoryType;
+import fr.openmc.api.anothermenulib.menu.Menu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.inventory.ItemStack;

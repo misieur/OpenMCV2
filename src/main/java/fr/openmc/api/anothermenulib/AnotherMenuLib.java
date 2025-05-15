@@ -1,7 +1,7 @@
-package fr.openmc.anothermenulib;
+package fr.openmc.api.anothermenulib;
 
-import fr.openmc.anothermenulib.menu.Menu;
-import fr.openmc.anothermenulib.utils.PacketUtils;
+import fr.openmc.api.anothermenulib.menu.Menu;
+import fr.openmc.api.anothermenulib.utils.PacketUtils;
 import lombok.Getter;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.Material;

@@ -1,4 +1,4 @@
-package fr.openmc.anothermenulib.events;
+package fr.openmc.api.anothermenulib.events;
 
 import org.bukkit.entity.Player;
 

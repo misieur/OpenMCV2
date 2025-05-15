@@ -1,4 +1,4 @@
-package fr.openmc.anothermenulib.menu;
+package fr.openmc.api.anothermenulib.menu;
 
 public enum ClickType {
     LEFT_CLICK,

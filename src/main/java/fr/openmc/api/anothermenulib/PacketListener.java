@@ -1,17 +1,15 @@
-package fr.openmc.anothermenulib;
+package fr.openmc.api.anothermenulib;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import fr.openmc.anothermenulib.events.InventoryClickEvent;
-import fr.openmc.anothermenulib.events.InventoryCloseEvent;
-import fr.openmc.anothermenulib.menu.ClickType;
-import fr.openmc.anothermenulib.menu.Menu;
+import fr.openmc.api.anothermenulib.events.InventoryClickEvent;
+import fr.openmc.api.anothermenulib.events.InventoryCloseEvent;
+import fr.openmc.api.anothermenulib.menu.ClickType;
+import fr.openmc.api.anothermenulib.menu.Menu;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -24,7 +22,7 @@ public class PacketListener extends PacketAdapter {
     private final Map<UUID, Integer> lastWindowId = new HashMap<>();
 
     public PacketListener(Plugin plugin) {
-        super(plugin, PacketType.Play.Client.WINDOW_CLICK, PacketType.Play.Client.CLOSE_WINDOW, PacketType.Play.Server.OPEN_WINDOW);
+        super(plugin, PacketType.Play.Client.WINDOW_CLICK, PacketType.Play.Client.CLOSE_WINDOW, PacketType.Play.Server.OPEN_WINDOW, PacketType.Play.Server.SET_SLOT);
         ProtocolLibrary.getProtocolManager().addPacketListener(this);
         instance = this;
     }
@@ -36,7 +34,8 @@ public class PacketListener extends PacketAdapter {
             int windowId = packet.getIntegers().read(0);
             UUID uuid = event.getPlayer().getUniqueId();
             lastWindowId.put(uuid, windowId);
-        }
+        } else if (event.getPacketType() == PacketType.Play.Server.SET_SLOT && AnotherMenuLib.getOpenMenus().containsKey(event.getPlayer().getUniqueId()))
+            event.setCancelled(true);
     }
 
     @Override

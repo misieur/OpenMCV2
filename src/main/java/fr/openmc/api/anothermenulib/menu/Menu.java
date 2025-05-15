@@ -1,7 +1,7 @@
-package fr.openmc.anothermenulib.menu;
+package fr.openmc.api.anothermenulib.menu;
 
-import fr.openmc.anothermenulib.events.InventoryClickEvent;
-import fr.openmc.anothermenulib.events.InventoryCloseEvent;
+import fr.openmc.api.anothermenulib.events.InventoryClickEvent;
+import fr.openmc.api.anothermenulib.events.InventoryCloseEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.ItemStack;
 
