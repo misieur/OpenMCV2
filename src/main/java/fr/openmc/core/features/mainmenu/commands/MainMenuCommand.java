@@ -1,6 +1,6 @@
 package fr.openmc.core.features.mainmenu.commands;
 
-import fr.openmc.api.anothermenulib.AnotherMenuLib;
+import fr.openmc.api.packetmenulib.PacketMenuLib;
 import fr.openmc.core.features.mainmenu.MainMenu;
 import org.bukkit.entity.Player;
 import revxrsal.commands.annotation.Command;
@@ -12,6 +12,6 @@ public class MainMenuCommand {
     @Description("Permet d'ouvrir le menu principal d'OpenMC")
     @CommandPermission("omc.commands.menu")
     public void menuCommand(Player player) {
-        AnotherMenuLib.openMenu(MainMenu.getMenu(), player);
+        PacketMenuLib.openMenu(MainMenu.getMenu(), player);
     }
 }

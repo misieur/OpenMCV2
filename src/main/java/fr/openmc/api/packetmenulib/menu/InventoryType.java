@@ -1,4 +1,4 @@
-package fr.openmc.api.anothermenulib.menu;
+package fr.openmc.api.packetmenulib.menu;
 
 import lombok.Getter;
 import net.minecraft.world.inventory.MenuType;

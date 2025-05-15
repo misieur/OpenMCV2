@@ -1,14 +1,14 @@
-package fr.openmc.api.anothermenulib;
+package fr.openmc.api.packetmenulib;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import fr.openmc.api.anothermenulib.events.InventoryClickEvent;
-import fr.openmc.api.anothermenulib.events.InventoryCloseEvent;
-import fr.openmc.api.anothermenulib.menu.ClickType;
-import fr.openmc.api.anothermenulib.menu.Menu;
+import fr.openmc.api.packetmenulib.events.InventoryClickEvent;
+import fr.openmc.api.packetmenulib.events.InventoryCloseEvent;
+import fr.openmc.api.packetmenulib.menu.ClickType;
+import fr.openmc.api.packetmenulib.menu.Menu;
 import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -34,7 +34,7 @@ public class PacketListener extends PacketAdapter {
             int windowId = packet.getIntegers().read(0);
             UUID uuid = event.getPlayer().getUniqueId();
             lastWindowId.put(uuid, windowId);
-        } else if (event.getPacketType() == PacketType.Play.Server.SET_SLOT && AnotherMenuLib.getOpenMenus().containsKey(event.getPlayer().getUniqueId()))
+        } else if (event.getPacketType() == PacketType.Play.Server.SET_SLOT && PacketMenuLib.getOpenMenus().containsKey(event.getPlayer().getUniqueId()))
             event.setCancelled(true);
     }
 
@@ -48,13 +48,13 @@ public class PacketListener extends PacketAdapter {
             byte button = packet.getBytes().read(0);
             int mode = ( (net.minecraft.world.inventory.ClickType) packet.getStructures().withType(net.minecraft.world.inventory.ClickType.class).read(0)).ordinal();
 
-            if (AnotherMenuLib.getWindowIds().containsKey(event.getPlayer().getUniqueId()) && windowId == AnotherMenuLib.getWindowIds().get(event.getPlayer().getUniqueId())) {
+            if (PacketMenuLib.getWindowIds().containsKey(event.getPlayer().getUniqueId()) && windowId == PacketMenuLib.getWindowIds().get(event.getPlayer().getUniqueId())) {
                 Player player = event.getPlayer();
                 event.setCancelled(true);
                 UUID uuid = player.getUniqueId();
 
-                if (AnotherMenuLib.getOpenMenus().containsKey(uuid)) {
-                    Menu menu = AnotherMenuLib.getOpenMenus().get(uuid);
+                if (PacketMenuLib.getOpenMenus().containsKey(uuid)) {
+                    Menu menu = PacketMenuLib.getOpenMenus().get(uuid);
 
                     if (slot == -999 && (mode == 0 || mode == 4)) {
                         menu.onInventoryClick(new InventoryClickEvent(ClickType.CLICK_OUTSIDE, slot, player));
@@ -67,7 +67,7 @@ public class PacketListener extends PacketAdapter {
                         };
 
                         menu.onInventoryClick(new InventoryClickEvent(clickType, slot, player));
-                        AnotherMenuLib.updateMenu(menu, player, stateId);
+                        PacketMenuLib.updateMenu(menu, player, stateId);
                     }
                 }
             }
@@ -75,10 +75,10 @@ public class PacketListener extends PacketAdapter {
             Player player = event.getPlayer();
             UUID uuid = player.getUniqueId();
 
-            if (AnotherMenuLib.getOpenMenus().containsKey(uuid)) {
-                AnotherMenuLib.getOpenMenus().get(uuid).onInventoryClose(new InventoryCloseEvent(player));
-                AnotherMenuLib.getOpenMenus().remove(uuid);
-                AnotherMenuLib.updateInv(Objects.requireNonNull(player));
+            if (PacketMenuLib.getOpenMenus().containsKey(uuid)) {
+                PacketMenuLib.getOpenMenus().get(uuid).onInventoryClose(new InventoryCloseEvent(player));
+                PacketMenuLib.getOpenMenus().remove(uuid);
+                PacketMenuLib.updateInv(Objects.requireNonNull(player));
             } // We don't verify if it's the good window id because if we do the player can close the inventory without packet and the event will never be called
         }
     }

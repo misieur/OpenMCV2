@@ -1,7 +1,7 @@
-package fr.openmc.api.anothermenulib;
+package fr.openmc.api.packetmenulib;
 
-import fr.openmc.api.anothermenulib.menu.Menu;
-import fr.openmc.api.anothermenulib.utils.PacketUtils;
+import fr.openmc.api.packetmenulib.menu.Menu;
+import fr.openmc.api.packetmenulib.utils.PacketUtils;
 import lombok.Getter;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.Material;
@@ -13,18 +13,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 
-public final class AnotherMenuLib {
+public final class PacketMenuLib {
 
     @Getter
     private static final Map<UUID, Menu> openMenus = new HashMap<>();
     @Getter
     private static final Map<UUID, Integer> windowIds = new HashMap<>();
     @Getter
-    private static AnotherMenuLib instance;
+    private static PacketMenuLib instance;
     @Getter
     private static PacketListener packetListener;
 
-    public AnotherMenuLib(JavaPlugin plugin) {
+    public PacketMenuLib(JavaPlugin plugin) {
         instance = this;
         packetListener = new PacketListener(plugin);
     }

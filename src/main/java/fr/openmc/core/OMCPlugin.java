@@ -1,6 +1,6 @@
 package fr.openmc.core;
 
-import fr.openmc.api.anothermenulib.AnotherMenuLib;
+import fr.openmc.api.packetmenulib.PacketMenuLib;
 import fr.openmc.api.menulib.MenuLib;
 import fr.openmc.core.features.leaderboards.LeaderboardManager;
 import fr.openmc.core.features.adminshop.AdminShopManager;
@@ -83,7 +83,7 @@ public class OMCPlugin extends JavaPlugin {
         new TabList();
         if (!OMCPlugin.isUnitTestVersion()) { // Tous les trucs faits par misieur qui fonctionne à peu près
             new LeaderboardManager(this);
-            new AnotherMenuLib(this);
+            new PacketMenuLib(this);
             new MainMenu(this);
         }
         new AdminShopManager(this);

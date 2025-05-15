@@ -1,11 +1,11 @@
 package fr.openmc.core.features.mainmenu.menus;
 
-import fr.openmc.api.anothermenulib.AnotherMenuLib;
-import fr.openmc.api.anothermenulib.events.InventoryClickEvent;
-import fr.openmc.api.anothermenulib.events.InventoryCloseEvent;
-import fr.openmc.api.anothermenulib.menu.ClickType;
-import fr.openmc.api.anothermenulib.menu.InventoryType;
-import fr.openmc.api.anothermenulib.menu.Menu;
+import fr.openmc.api.packetmenulib.PacketMenuLib;
+import fr.openmc.api.packetmenulib.events.InventoryClickEvent;
+import fr.openmc.api.packetmenulib.events.InventoryCloseEvent;
+import fr.openmc.api.packetmenulib.menu.ClickType;
+import fr.openmc.api.packetmenulib.menu.InventoryType;
+import fr.openmc.api.packetmenulib.menu.Menu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.inventory.ItemStack;
@@ -39,7 +39,7 @@ public class MainMenu implements Menu {
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.clickType() == ClickType.CLICK_OUTSIDE) {
             event.player().sendMessage(Component.text("Inventory Closed (click outside)"));
-            AnotherMenuLib.closeMenu(event.player());
+            PacketMenuLib.closeMenu(event.player());
         } else if (event.clickType() == ClickType.LEFT_CLICK) {
             event.player().sendMessage(Component.text("Left Click Slot: " + event.slot()));
         }

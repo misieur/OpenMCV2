@@ -1,6 +1,6 @@
 package fr.openmc.core.features.mainmenu;
 
-import fr.openmc.api.anothermenulib.AnotherMenuLib;
+import fr.openmc.api.packetmenulib.PacketMenuLib;
 import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.mainmenu.listeners.PacketListener;
 import lombok.Getter;
@@ -18,6 +18,6 @@ public class MainMenu {
     }
 
     public static void openMainMenu(Player player) {
-        AnotherMenuLib.openMenu(menu, player);
+        PacketMenuLib.openMenu(menu, player);
     }
 }
