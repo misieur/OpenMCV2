@@ -1,5 +1,6 @@
 package fr.openmc.core.features.mainmenu;
 
+import fr.openmc.anothermenulib.AnotherMenuLib;
 import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.mainmenu.listeners.PacketListener;
 import org.bukkit.entity.Player;
@@ -14,6 +15,6 @@ public class MainMenu {
     }
 
     public static void openMainMenu(Player player) {
-
+        AnotherMenuLib.openMenu(new fr.openmc.core.features.mainmenu.menus.MainMenu(), player);
     }
 }
