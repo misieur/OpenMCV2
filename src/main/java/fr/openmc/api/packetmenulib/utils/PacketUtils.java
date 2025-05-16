@@ -1,38 +1,75 @@
 package fr.openmc.api.packetmenulib.utils;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import fr.openmc.api.packetmenulib.menu.InventoryType;
+import fr.openmc.core.OMCPlugin;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
-import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.world.inventory.MenuType;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public class PacketUtils {
-    public static void sendOpenInventoryPacket(Player player, int containerId, MenuType<?> menuType, net.kyori.adventure.text.Component title) {
-        Component component = Component.Serializer.fromJson(
-                JSONComponentSerializer.json().serialize(title),
-                HolderLookup.Provider.create(Stream.empty())
-        );
-        ClientboundOpenScreenPacket packet = new ClientboundOpenScreenPacket(containerId, menuType, component != null ? component : Component.empty());
-        ((CraftPlayer) player).getHandle().connection.send(packet);
+
+    private static ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+
+    public static void sendOpenInventoryPacket(Player player, int containerId, MenuType<?> type, net.kyori.adventure.text.Component title) {
+        try {
+            PacketContainer packet = manager.createPacket(PacketType.Play.Server.OPEN_WINDOW);
+
+            packet.getStructures().getFields().forEach(field -> Bukkit.getLogger().info(field.getField().toString()));
+
+            packet.getIntegers().write(0, containerId); // Window ID
+            packet.getStructures().withType(MenuType.class).write(0, type);
+            packet.getChatComponents().write(0, WrappedChatComponent.fromJson(JSONComponentSerializer.json().serialize(title))); // Title
+            manager.sendServerPacket(player, packet);
+        } catch (Exception e) {
+            OMCPlugin.getInstance().getLogger().warning("An error occurred while sending the open inventory packet to " + player.getName() + ": " + e.getMessage());
+        }
+
     }
 
     public static void sendContainerContentPacket(Player player, int containerId, int stateId, List<ItemStack> items, ItemStack cursorItem) {
-        net.minecraft.world.item.ItemStack nmsCursorItem = net.minecraft.world.item.ItemStack.fromBukkitCopy(cursorItem);
-        List<net.minecraft.world.item.ItemStack> nmsItems = items.stream().map(net.minecraft.world.item.ItemStack::fromBukkitCopy).toList();
-        ClientboundContainerSetContentPacket packet = new ClientboundContainerSetContentPacket(containerId,stateId, nmsItems, nmsCursorItem);
-        ((CraftPlayer) player).getHandle().connection.send(packet);
+        try {
+            PacketContainer packet = manager.createPacket(PacketType.Play.Server.WINDOW_ITEMS);
+
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i) == null) {
+                    items.set(i, new ItemStack(Material.AIR));
+                }
+            }
+
+            packet.getIntegers().write(0, containerId); // Window ID
+            packet.getIntegers().write(1, stateId); // State ID
+
+            packet.getItemListModifier().write(0, items);
+            packet.getItemModifier().write(0, cursorItem);
+
+            manager.sendServerPacket(player, packet);
+        } catch (Exception e) {
+            OMCPlugin.getInstance().getLogger().warning("An error occurred while sending the container content packet to " + player.getName() + ": " + e.getMessage());
+        }
     }
 
     public static void sendCloseInventoryPacket(Player player, int containerId) {
-        ClientboundContainerClosePacket packet = new ClientboundContainerClosePacket(containerId);
-        ((CraftPlayer) player).getHandle().connection.send(packet);
+        try {
+            PacketContainer packet = manager.createPacket(PacketType.Play.Server.CLOSE_WINDOW);
+
+            packet.getIntegers().write(0, containerId); // Window ID
+
+            manager.sendServerPacket(player, packet);
+        } catch (Exception e) {
+            OMCPlugin.getInstance().getLogger().warning("An error occurred while sending the close inventory packet to " + player.getName() + ": " + e.getMessage());
+        }
+
     }
 }

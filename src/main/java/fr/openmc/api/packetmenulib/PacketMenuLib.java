@@ -32,8 +32,7 @@ public final class PacketMenuLib {
     public static void openMenu(Menu menu, Player player) {
         int windowId = PacketListener.getInstance().getLastWindowId().getOrDefault(player.getUniqueId(), 0) + 1;
         windowIds.put(player.getUniqueId(), windowId);
-        MenuType<?> menuType = menu.getInventoryType().getMenuType();
-        PacketUtils.sendOpenInventoryPacket(player, windowId, menuType, menu.getTitle());
+        PacketUtils.sendOpenInventoryPacket(player, windowId, menu.getInventoryType().getMenuType(), menu.getTitle());
         updateMenu(menu, player, 1);
         openMenus.put(player.getUniqueId(), menu);
     }
@@ -80,7 +79,7 @@ public final class PacketMenuLib {
     }
 
     private static List<ItemStack> getPlayerItems(Player player) {
-        List<ItemStack> items = new ArrayList<>(Collections.nCopies(45, null));
+        List<ItemStack> items = new ArrayList<>(Collections.nCopies(45, new ItemStack(Material.AIR)));
         ItemStack[] contents = player.getInventory().getContents();
         // hotbar
         for (int i = 0; i < 9; i++) {
