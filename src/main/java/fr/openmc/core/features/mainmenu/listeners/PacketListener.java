@@ -42,7 +42,7 @@ public class PacketListener implements Listener {
     private static ClientboundUpdateAdvancementsPacket createAdvancementPacket() {
         DisplayInfo displayInfo = new DisplayInfo(
                 ItemStack.fromBukkitCopy(getInvisibleItem()),
-                Component.empty(),
+                Component.literal("Chargement..."),
                 Component.empty(),
                 Optional.of(new ClientAsset(ResourceLocation.fromNamespaceAndPath("minecraft", "gui/tab_header_background"))), // Texture transparente par défaut
                 AdvancementType.GOAL,

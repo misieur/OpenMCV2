@@ -26,8 +26,6 @@ public class PacketUtils {
         try {
             PacketContainer packet = manager.createPacket(PacketType.Play.Server.OPEN_WINDOW);
 
-            packet.getStructures().getFields().forEach(field -> Bukkit.getLogger().info(field.getField().toString()));
-
             packet.getIntegers().write(0, containerId); // Window ID
             packet.getStructures().withType(MenuType.class).write(0, type);
             packet.getChatComponents().write(0, WrappedChatComponent.fromJson(JSONComponentSerializer.json().serialize(title))); // Title
