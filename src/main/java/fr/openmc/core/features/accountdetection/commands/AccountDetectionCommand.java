@@ -30,7 +30,7 @@ public class AccountDetectionCommand {
         sender.sendMessage("§aLa configuration a été rechargée.");
     }
 
-    @CommandPermission("omc.commands.accountdetection.exemptplayer")
+    @CommandPermission("omc.admin.commands.accountdetection.exemptplayer")
     @Subcommand("exemptePlayer")
     void exemptPlayerCommand(CommandSender sender, Player player) {
         try {
@@ -41,7 +41,7 @@ public class AccountDetectionCommand {
         }
     }
 
-    @CommandPermission("omc.commands.accountdetection.check")
+    @CommandPermission("omc.admin.commands.accountdetection.check")
     @Subcommand("check")
     void checkCommand(CommandSender sender, Player player) {
         sender.sendMessage("Recherche en cours...");
