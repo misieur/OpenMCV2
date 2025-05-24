@@ -1,6 +1,10 @@
 package fr.openmc.core.features.city.commands;
 
-import fr.openmc.core.features.city.*;
+import fr.openmc.api.cooldown.DynamicCooldownManager;
+import fr.openmc.core.features.city.CPermission;
+import fr.openmc.core.features.city.City;
+import fr.openmc.core.features.city.CityManager;
+import fr.openmc.core.features.city.CityMessages;
 import fr.openmc.core.features.city.listeners.ProtectionListener;
 import fr.openmc.core.features.city.mascots.MascotUtils;
 import fr.openmc.core.features.city.mascots.MascotsManager;
@@ -9,6 +13,8 @@ import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -19,6 +25,7 @@ import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +44,67 @@ public class AdminCityCommands {
 
         city.delete();
         MessagesManager.sendMessage(player, Component.text("La ville a été supprimée"), Prefix.STAFF, MessageType.SUCCESS, false);
+    }
+
+    private static final int PER_PAGE = 10;
+
+    @Subcommand("list")
+    @CommandPermission("omc.admins.commands.admincity.list")
+    void list(Player player) {
+        List<City> all = new ArrayList<>(CityManager.getCities());
+
+        all.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+
+        int page = 1;
+
+        int total = all.size();
+        int maxPage = (int) Math.ceil(total / (double) PER_PAGE);
+        if (page > maxPage) page = maxPage;
+
+        int start = (page - 1) * PER_PAGE;
+        int end = Math.min(start + PER_PAGE, total);
+        List<City> sub = all.subList(start, end);
+        MessagesManager.sendMessage(
+                player,
+                Component.text("—— Villes (page " + page + " / " + maxPage + ") ——")
+                        .color(NamedTextColor.GOLD),
+                Prefix.STAFF,
+                MessageType.SUCCESS,
+                false
+        );
+
+        sub.forEach(city -> {
+            String id = city.getUUID();
+            String name = city.getName();
+
+            Component line = Component.text("- ")
+                    .append(Component.text(id).color(NamedTextColor.GRAY))
+                    .append(Component.text(" • "))
+                    .append(Component.text(name).color(NamedTextColor.WHITE))
+                    .append(Component.text(" [copier]")
+                            .color(NamedTextColor.GREEN)
+                            .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                                    Component.text("Clique pour copier l’UUID"))
+                            )
+                            .clickEvent(ClickEvent.copyToClipboard(id))
+                    );
+
+            player.sendMessage(line);
+        });
+
+        Component nav = Component.text("")
+                .append(page > 1
+                        ? Component.text("« Prev").color(NamedTextColor.YELLOW)
+                        .clickEvent(ClickEvent.runCommand("/cities " + (page - 1)))
+                        : Component.text("       "))
+                .append(Component.text("    "))
+                .append(page < maxPage
+                        ? Component.text("Next »").color(NamedTextColor.YELLOW)
+                        .clickEvent(ClickEvent.runCommand("/cities " + (page + 1)))
+                        : Component.text("      "));
+
+        player.sendMessage(nav);
+        return;
     }
 
     @Subcommand("info")
@@ -236,14 +304,6 @@ public class AdminCityCommands {
         }
     }
 
-    @Subcommand("mascots chest")
-    @CommandPermission("omc.admins.commands.admcity.mascots.chest")
-    public void giveMascotsChest(@Named("player") Player target){
-        if (target.isOnline()){
-            MascotsManager.giveChest(target);
-        }
-    }
-
     @Subcommand("mascots immunityoff")
     @CommandPermission("omc.admins.commands.admcity.mascots.immunityoff")
     public void removeMascotImmunity(Player sender, @Named("player") Player target){
@@ -264,7 +324,7 @@ public class AdminCityCommands {
         if (MascotUtils.getMascotImmunity(city_uuid)){
             MascotUtils.changeMascotImmunity(city_uuid, false);
         }
-        MascotUtils.setImmunityTime(city_uuid, 0);
+        DynamicCooldownManager.clear(city_uuid, "mascot:immunity");
         UUID mascotUUID = MascotUtils.getMascotUUIDOfCity(city_uuid);
         if (mascotUUID!=null){
             Entity mob = Bukkit.getEntity(mascotUUID);

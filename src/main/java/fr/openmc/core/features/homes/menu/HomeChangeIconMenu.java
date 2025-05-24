@@ -19,6 +19,7 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,29 +63,42 @@ public class HomeChangeIconMenu extends PaginatedMenu {
     @Override
     public @NotNull List<ItemStack> getItems() {
         List<ItemStack> items = new ArrayList<>();
+        Player player = getOwner();
 
-        for (int i = 0; i < HomeIcons.values().length; i++) {
-            HomeIcons homeIcon = HomeIcons.values()[i];
-            items.add(new ItemBuilder(this, CustomItemRegistry.getByName(homeIcon.getId()).getBest(), itemMeta -> {
-                itemMeta.setDisplayName("§a" + homeIcon.getName());
-                itemMeta.setLore(List.of(
-                        ChatColor.GRAY + "■ §aClique §2gauche §apour changer l'icône"
-                ));
+        try {
+            for (int i = 0; i < HomeIcons.values().length; i++) {
+                HomeIcons homeIcon = HomeIcons.values()[i];
+                items.add(new ItemBuilder(this, CustomItemRegistry.getByName(homeIcon.getId()).getBest(), itemMeta -> {
+                    itemMeta.setDisplayName("§a" + homeIcon.getName());
+                    itemMeta.setLore(List.of(
+                            ChatColor.GRAY + "■ §aClique §2gauche §apour changer l'icône"
+                    ));
 
-                if(home.getIcon().equals(homeIcon)) {
-                    itemMeta.addEnchant(Enchantment.SHARPNESS, 5, false);
-                    itemMeta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
-                }
-            }).setOnClick(event -> {
-                Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
-                    home.setIcon(homeIcon);
-                    MessagesManager.sendMessage(getOwner(), Component.text("§aL'icône de votre home §2"+ home.getName() + " §achangée avec succès !"), Prefix.HOME, MessageType.SUCCESS, true);
-                });
-                getOwner().closeInventory();
-            }));
+                    if(home.getIcon().equals(homeIcon)) {
+                        itemMeta.addEnchant(Enchantment.SHARPNESS, 5, false);
+                        itemMeta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
+                    }
+                }).setOnClick(event -> {
+                    Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
+                        home.setIcon(homeIcon);
+                        MessagesManager.sendMessage(player, Component.text("§aL'icône de votre home §2"+ home.getName() + " §achangée avec succès !"), Prefix.HOME, MessageType.SUCCESS, true);
+                    });
+                    player.closeInventory();
+                }));
+            }
+
+            return items;
+        } catch (Exception e) {
+            MessagesManager.sendMessage(player, Component.text("§cUne Erreur est survenue, veuillez contacter le Staff"), Prefix.OPENMC, MessageType.ERROR, false);
+            player.closeInventory();
+            e.printStackTrace();
         }
-
         return items;
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 
     @Override
@@ -102,4 +116,9 @@ public class HomeChangeIconMenu extends PaginatedMenu {
 
     @Override
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {}
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+        //empty
+    }
 }

@@ -7,13 +7,15 @@ import fr.openmc.api.menulib.utils.StaticSlots;
 import fr.openmc.core.features.corporation.company.Company;
 import fr.openmc.core.features.corporation.data.TransactionData;
 import fr.openmc.core.features.economy.EconomyManager;
-import fr.openmc.core.utils.PapiAPI;
+import fr.openmc.core.utils.api.ItemAdderApi;
+import fr.openmc.core.utils.api.PapiApi;
 import fr.openmc.core.utils.customitems.CustomItemRegistry;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -89,7 +91,7 @@ public class CompanyBankTransactionsMenu extends PaginatedMenu {
 
     @Override
     public @NotNull String getName() {
-        if (PapiAPI.hasPAPI() && CustomItemRegistry.hasItemsAdder()) {
+        if (PapiApi.hasPAPI() && ItemAdderApi.hasItemAdder()) {
             return PlaceholderAPI.setPlaceholders(getOwner(), "§r§f%img_offset_-11%%img_paginate_company_menu%");
         } else {
             return "Transactions de l'entreprise";
@@ -99,5 +101,15 @@ public class CompanyBankTransactionsMenu extends PaginatedMenu {
     @Override
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
 
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 }

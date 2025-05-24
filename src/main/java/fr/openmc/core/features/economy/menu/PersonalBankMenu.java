@@ -3,6 +3,8 @@ package fr.openmc.core.features.economy.menu;
 import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
+import fr.openmc.api.menulib.utils.MenuUtils;
+import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.economy.BankManager;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.utils.DateUtils;
@@ -11,12 +13,14 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class PersonalBankMenu extends Menu {
 
@@ -56,7 +60,8 @@ public class PersonalBankMenu extends Menu {
             new PersonalBankDepositMenu(player).open();
         }));
 
-        inventory.put(13, new ItemBuilder(this, Material.DIAMOND_BLOCK, itemMeta -> {
+        Supplier<ItemStack> interestItemSupplier = () -> {
+            return new ItemBuilder(this, Material.DIAMOND_BLOCK, itemMeta -> {
             itemMeta.itemName(Component.text("§6Votre argent"));
             itemMeta.lore(List.of(
                 Component.text("§7Vous avez actuellement §d" +
@@ -65,7 +70,11 @@ public class PersonalBankMenu extends Menu {
                 Component.text("§7Votre prochain intéret est de §b" + BankManager.getInstance().calculatePlayerInterest(player.getUniqueId())*100 + "% §7dans §b" + DateUtils.convertSecondToTime(BankManager.getInstance().getSecondsUntilInterest()))
                 )
             );
-        }));
+            });
+        };
+
+        MenuUtils.runDynamicItem(player, this, 13, interestItemSupplier)
+                .runTaskTimer(OMCPlugin.getInstance(), 0L, 20L);
 
         List<Component> loreBankTake = List.of(
                 Component.text("§7L'argent sera pris dans votre banque"),
@@ -80,5 +89,15 @@ public class PersonalBankMenu extends Menu {
         }));
 
         return inventory;
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+        //empty
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 }

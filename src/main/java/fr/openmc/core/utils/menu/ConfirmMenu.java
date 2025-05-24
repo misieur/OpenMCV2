@@ -3,12 +3,14 @@ package fr.openmc.core.utils.menu;
 import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
-import fr.openmc.core.utils.PapiAPI;
+import fr.openmc.core.utils.api.ItemAdderApi;
+import fr.openmc.core.utils.api.PapiApi;
 import fr.openmc.core.utils.customitems.CustomItemRegistry;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +44,7 @@ public class ConfirmMenu extends Menu {
 
     @Override
     public @NotNull String getName() {
-        if (PapiAPI.hasPAPI() && CustomItemRegistry.hasItemsAdder()) {
+        if (PapiApi.hasPAPI() && ItemAdderApi.hasItemAdder()) {
             return PlaceholderAPI.setPlaceholders(getOwner(), "§r§f%img_offset_-8%%img_confirm_menu%");
         } else {
             return "Confirmation";
@@ -88,5 +90,15 @@ public class ConfirmMenu extends Menu {
         }));
 
         return inventory;
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+        //empty
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 }
