@@ -7,9 +7,10 @@ import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.api.menulib.utils.StaticSlots;
 import fr.openmc.core.features.corporation.company.Company;
 import fr.openmc.core.features.corporation.manager.CompanyManager;
+import fr.openmc.core.features.corporation.manager.ShopBlocksManager;
 import fr.openmc.core.features.corporation.shops.Shop;
 import fr.openmc.core.utils.ItemUtils;
-import fr.openmc.core.utils.api.ItemAdderApi;
+import fr.openmc.core.utils.api.ItemsAdderApi;
 import fr.openmc.core.utils.api.PapiApi;
 import fr.openmc.core.utils.customitems.CustomItemRegistry;
 import fr.openmc.core.utils.messages.MessageType;
@@ -21,6 +22,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +37,7 @@ public class ShopSearchMenu extends PaginatedMenu {
 
     @Override
     public @Nullable Material getBorderMaterial() {
-        return Material.BLUE_STAINED_GLASS_PANE;
+        return null;
     }
 
     @Override
@@ -52,9 +54,9 @@ public class ShopSearchMenu extends PaginatedMenu {
             if (shops==null){continue;}
 
             List<Component> loc = new ArrayList<>();
-            double x = shops.getBlocksManager().getMultiblock(shops.getUuid()).getStockBlock().getBlockX();
-            double y = shops.getBlocksManager().getMultiblock(shops.getUuid()).getStockBlock().getBlockY();
-            double z = shops.getBlocksManager().getMultiblock(shops.getUuid()).getStockBlock().getBlockZ();
+            double x = ShopBlocksManager.getMultiblock(shops.getUuid()).getStockBlock().getBlockX();
+            double y = ShopBlocksManager.getMultiblock(shops.getUuid()).getStockBlock().getBlockY();
+            double z = ShopBlocksManager.getMultiblock(shops.getUuid()).getStockBlock().getBlockZ();
 
             loc.add(Component.text("§lLocation : §r x : " + x + " y : " + y + " z : " + z));
 
@@ -97,9 +99,9 @@ public class ShopSearchMenu extends PaginatedMenu {
                                 boolean shopFind = false;
 
                                 for (Shop shop : CompanyManager.shops){
-                                    double x = shop.getBlocksManager().getMultiblock(shop.getUuid()).getStockBlock().getBlockX();
-                                    double y = shop.getBlocksManager().getMultiblock(shop.getUuid()).getStockBlock().getBlockY();
-                                    double z = shop.getBlocksManager().getMultiblock(shop.getUuid()).getStockBlock().getBlockZ();
+                                    double x = ShopBlocksManager.getMultiblock(shop.getUuid()).getStockBlock().getBlockX();
+                                    double y = ShopBlocksManager.getMultiblock(shop.getUuid()).getStockBlock().getBlockY();
+                                    double z = ShopBlocksManager.getMultiblock(shop.getUuid()).getStockBlock().getBlockZ();
 
                                     if (shop.getName().contains(input)){
                                         MessagesManager.sendMessage(getOwner(), Component.text("§lLocation du shop §a"+ shop.getName() + " : §r x : " + x + " y : " + y + " z : " + z), Prefix.SHOP, MessageType.INFO, false);
@@ -148,7 +150,7 @@ public class ShopSearchMenu extends PaginatedMenu {
 
     @Override
     public @NotNull String getName() {
-        if (PapiApi.hasPAPI() && ItemAdderApi.hasItemAdder()) {
+        if (PapiApi.hasPAPI() && ItemsAdderApi.hasItemAdder()) {
             return PlaceholderAPI.setPlaceholders(getOwner(), "§r§f%img_offset_-11%%img_large_shop_menu%");
         } else {
             return "§l§6search";
@@ -158,5 +160,15 @@ public class ShopSearchMenu extends PaginatedMenu {
     @Override
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
 
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 }

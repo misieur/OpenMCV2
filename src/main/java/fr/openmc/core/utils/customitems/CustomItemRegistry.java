@@ -3,16 +3,12 @@ package fr.openmc.core.utils.customitems;
 import fr.openmc.core.CommandsManager;
 import fr.openmc.core.utils.customitems.buttons.*;
 import fr.openmc.core.utils.customitems.items.company.CompanyBox;
-import fr.openmc.core.utils.customitems.items.homes.Bin;
-import fr.openmc.core.utils.customitems.items.homes.BinRed;
-import fr.openmc.core.utils.customitems.items.homes.Information;
-import fr.openmc.core.utils.customitems.items.homes.Upgrade;
+import fr.openmc.core.utils.customitems.items.homes.*;
 import fr.openmc.core.utils.customitems.items.homes.icons.*;
 import fr.openmc.core.utils.customitems.armors.SuitBoots;
 import fr.openmc.core.utils.customitems.armors.SuitChestplate;
 import fr.openmc.core.utils.customitems.armors.SuitHelmet;
 import fr.openmc.core.utils.customitems.armors.SuitLeggings;
-import fr.openmc.core.utils.customitems.buttons.*;
 import fr.openmc.core.utils.customitems.items.*;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import org.bukkit.NamespacedKey;
@@ -27,7 +23,7 @@ public class CustomItemRegistry {
     static HashMap<String, CustomItem> items = new HashMap<>();
     static NamespacedKey customNameKey = new NamespacedKey("aywen", "custom_item");
 
-    static public void init() {
+    public CustomItemRegistry() {
         CommandsManager.getHandler().register(new CustomItemsDebugCommand());
 
         // Ici, enregistrer tous les items custom
@@ -44,6 +40,8 @@ public class CustomItemRegistry {
         new StackButton();
         new MinusButton();
         new PlusButton();
+        new QuestsRightArrow();
+        new QuestsLeftArrow();
 
         /* Items */
         new ContestShell();
@@ -73,6 +71,7 @@ public class CustomItemRegistry {
         new Sandblock();
         new Shop();
         new Xernas();
+        new Invisible();
     }
 
     public static void register(String name, CustomItem item) {

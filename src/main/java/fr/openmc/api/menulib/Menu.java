@@ -2,12 +2,16 @@ package fr.openmc.api.menulib;
 
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemUtils;
+import fr.openmc.core.utils.messages.MessageType;
+import fr.openmc.core.utils.messages.MessagesManager;
+import fr.openmc.core.utils.messages.Prefix;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -16,6 +20,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -73,7 +78,18 @@ public abstract class Menu implements InventoryHolder {
 	 *          including the player who clicked, the clicked inventory slot, and other relevant event data.
 	 */
 	public abstract void onInventoryClick(InventoryClickEvent e);
-	
+
+	/**
+	 * Handles the event that occurs when a player closes the menu's inventory.
+	 * This method is called whenever an {@link InventoryCloseEvent} is triggered for a menu
+	 * controlled by this class. Subclasses
+	 * should implement the logic to respond to the inventory being closed,
+	 * such as saving data or cleaning up resources.
+	 *
+	 * @param event The {@link InventoryCloseEvent} containing details about the close action,
+	 */
+	public abstract void onClose(InventoryCloseEvent event);
+
 	/**
 	 * Retrieves the content of this menu as a mapping between inventory slot indexes and {@link ItemStack}s.
 	 * Each entry in the map represents an item stored in a specific slot of the menu's inventory.
@@ -83,6 +99,15 @@ public abstract class Menu implements InventoryHolder {
 	 */
 	@NotNull
 	public abstract Map<Integer, ItemStack> getContent();
+
+	/**
+	 * Retrieves a list of inventory slot indices that can be taken from the menu.
+	 * These slots are typically used for items that can be moved or removed by the player.
+	 *
+	 * @return A non-null list of integers representing the takable inventory slot indices.
+	 */
+
+	public abstract List<Integer> getTakableSlot();
 	
 	/**
 	 * Opens the menu for the owner player. If the menu specifies a required permission,
@@ -94,15 +119,21 @@ public abstract class Menu implements InventoryHolder {
 	 * the owner player.
 	 */
 	public final void open() {
-		if (getPermission() != null && ! getPermission().isEmpty()) {
-			if (! owner.hasPermission(getPermission())) {
-				owner.sendMessage(getNoPermissionMessage());
-				return;
+		try {
+			if (getPermission() != null && !getPermission().isEmpty()) {
+				if (!owner.hasPermission(getPermission())) {
+					owner.sendMessage(getNoPermissionMessage());
+					return;
+				}
 			}
+			Inventory inventory = getInventory();
+			getContent().forEach(inventory::setItem);
+			owner.openInventory(inventory);
+		} catch (Exception e) {
+			MessagesManager.sendMessage(owner, Component.text("§cUne Erreur est survenue, veuillez contacter le Staff"), Prefix.OPENMC, MessageType.ERROR, false);
+			owner.closeInventory();
+			e.printStackTrace();
 		}
-		Inventory inventory = getInventory();
-		getContent().forEach(inventory::setItem);
-		owner.openInventory(inventory);
 	}
 	
 	/**
@@ -144,8 +175,14 @@ public abstract class Menu implements InventoryHolder {
 	 * and opens it by calling its {@code open} method.
 	 */
 	public final void back() {
-		Menu lastMenu = MenuLib.getLastMenu(owner);
-		lastMenu.open();
+		try {
+			Menu lastMenu = MenuLib.getLastMenu(owner);
+			lastMenu.open();
+		} catch (Exception e) {
+			MessagesManager.sendMessage(owner, Component.text("§cUne Erreur est survenue, veuillez contacter le Staff"), Prefix.OPENMC, MessageType.ERROR, false);
+			owner.closeInventory();
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -160,4 +197,5 @@ public abstract class Menu implements InventoryHolder {
 	public final Inventory getInventory() {
 		return Bukkit.createInventory(this, getInventorySize().getSize(), Component.text(getName()));
 	}
+
 }

@@ -5,47 +5,47 @@ import fr.openmc.api.cooldown.DynamicCooldownManager;
 import fr.openmc.api.menulib.MenuLib;
 import fr.openmc.core.commands.admin.freeze.FreezeManager;
 import fr.openmc.core.commands.utils.SpawnManager;
+import fr.openmc.core.features.accountdetection.AccountDetectionManager;
 import fr.openmc.core.features.adminshop.AdminShopManager;
 import fr.openmc.core.features.mainmenu.MainMenu;
-import fr.openmc.core.features.scoreboards.ScoreboardManager;
+import fr.openmc.core.features.bossbar.BossbarManager;
 import fr.openmc.core.features.city.CityManager;
-import fr.openmc.core.features.city.mascots.MascotsManager;
-import fr.openmc.core.features.city.mayor.managers.MayorManager;
+import fr.openmc.core.features.city.sub.mascots.MascotsManager;
+import fr.openmc.core.features.city.sub.mayor.managers.MayorManager;
 import fr.openmc.core.features.contest.managers.ContestManager;
-import fr.openmc.core.features.contest.managers.ContestPlayerManager;
-import fr.openmc.core.features.economy.BankManager;
 import fr.openmc.core.features.corporation.manager.CompanyManager;
-import fr.openmc.core.features.corporation.manager.PlayerShopManager;
-import fr.openmc.core.features.corporation.manager.ShopBlocksManager;
+import fr.openmc.core.features.economy.BankManager;
 import fr.openmc.core.features.economy.EconomyManager;
-import fr.openmc.core.features.friend.FriendManager;
-import fr.openmc.core.features.homes.HomeUpgradeManager;
 import fr.openmc.core.features.homes.HomesManager;
+import fr.openmc.core.features.homes.icons.HomeIconCacheManager;
 import fr.openmc.core.features.leaderboards.LeaderboardManager;
+import fr.openmc.core.features.privatemessage.PrivateMessageManager;
+import fr.openmc.core.features.quests.QuestProgressSaveManager;
 import fr.openmc.core.features.quests.QuestsManager;
 import fr.openmc.core.features.scoreboards.ScoreboardManager;
 import fr.openmc.core.features.scoreboards.TabList;
+import fr.openmc.core.features.settings.PlayerSettingsManager;
 import fr.openmc.core.features.tpa.TPAManager;
 import fr.openmc.core.features.updates.UpdateManager;
-import fr.openmc.core.listeners.CubeListener;
 import fr.openmc.core.utils.MotdUtils;
 import fr.openmc.core.utils.api.*;
 import fr.openmc.core.utils.customitems.CustomItemRegistry;
 import fr.openmc.core.utils.database.DatabaseManager;
 import fr.openmc.core.utils.translation.TranslationManager;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.sql.SQLException;
+import java.util.logging.Logger;
 
 public class OMCPlugin extends JavaPlugin {
     @Getter static OMCPlugin instance;
     @Getter static FileConfiguration configs;
-    @Getter static TranslationManager translationManager;
-    private DatabaseManager dbManager;
 
     @Override
     public void onEnable() {
@@ -57,56 +57,53 @@ public class OMCPlugin extends JavaPlugin {
 
         /* EXTERNALS */
         MenuLib.init(this);
-        // TODO: faire des messages a envoyer dans la console disant, la version du plugin, version de minecraft, si chaque api sont bien connecté ou manquant, et les versions des plugins lié a OpenMC ?
+
         new LuckPermsApi();
         new PapiApi();
         new WorldGuardApi();
-        new ItemAdderApi();
-        new FancyNpcApi();
+        new ItemsAdderApi();
+        new FancyNpcsApi();
+
+        logLoadMessage();
 
         /* MANAGERS */
-        dbManager = new DatabaseManager();
+        new DatabaseManager();
         new CommandsManager();
-        CustomItemRegistry.init();
-        ContestManager contestManager = new ContestManager(this);
-        ContestPlayerManager contestPlayerManager = new ContestPlayerManager();
-        new SpawnManager(this);
+        new CustomItemRegistry();
+        new SpawnManager();
         new UpdateManager();
-        new MascotsManager(this); // laisser avant CityManager
         new CityManager();
         new ListenersManager();
         new EconomyManager();
-        new MayorManager(this);
         new BankManager();
         new ScoreboardManager();
         new HomesManager();
-        new HomeUpgradeManager(HomesManager.getInstance());
         new TPAManager();
         new FreezeManager();
-        new FriendManager();
         new QuestsManager();
+        new QuestProgressSaveManager();
         new TabList();
         if (!OMCPlugin.isUnitTestVersion()) { // Tous les trucs faits par misieur qui fonctionne à peu près
             new LeaderboardManager(this);
             new PacketMenuLib(this);
             new MainMenu(this);
         }
-        new AdminShopManager(this);
+        new AdminShopManager();
+        new AccountDetectionManager();
+        new BossbarManager();
+        new CompanyManager();// laisser apres Economy Manager
+        new ContestManager();
+        new PrivateMessageManager();
 
-        if (!OMCPlugin.isUnitTestVersion()){
-            new ShopBlocksManager(this);
-            new PlayerShopManager();
-            new CompanyManager();// laisser apres Economy Manager
-        }
-        contestPlayerManager.setContestManager(contestManager); // else ContestPlayerManager crash because ContestManager is null
-        contestManager.setContestPlayerManager(contestPlayerManager);
-        new MotdUtils(this);
-        translationManager = new TranslationManager(this, new File(this.getDataFolder(), "translations"), "fr");
-        translationManager.loadAllLanguages();
+        if (!OMCPlugin.isUnitTestVersion())
+            new LeaderboardManager();
 
-        /* LOAD */
-        DynamicCooldownManager.loadCooldowns();
+        new MotdUtils();
+        new TranslationManager(new File(this.getDataFolder(), "translations"), "fr");
+        new DynamicCooldownManager();
+        HomeIconCacheManager.initialize();
 
+        PlayerSettingsManager.loadAllPlayerSettings();
 
         getLogger().info("Plugin activé");
     }
@@ -115,41 +112,37 @@ public class OMCPlugin extends JavaPlugin {
     public void onDisable() {
         // SAUVEGARDE
 
-        // - Maires
-        MayorManager mayorManager = MayorManager.getInstance();
-        mayorManager.saveMayorConstant();
-        mayorManager.savePlayersVote();
-        mayorManager.saveMayorCandidates();
-        mayorManager.saveCityMayors();
-        mayorManager.saveCityLaws();
+        // - Settings
+        PlayerSettingsManager.saveAllSettings();
 
-        // - Home
+        // - Maires
+        MayorManager.saveMayorConstant();
+        MayorManager.savePlayersVote();
+        MayorManager.saveMayorCandidates();
+        MayorManager.saveCityMayors();
+        MayorManager.saveCityLaws();
+
+        // - Companies & Shop
         CompanyManager.saveAllCompanies();
         CompanyManager.saveAllShop();
 
-        HomesManager.getInstance().saveHomesData();
+        HomesManager.saveHomesData();
+        HomeIconCacheManager.clearCache();
 
         // - Contest
-        ContestManager.getInstance().saveContestData();
-        ContestManager.getInstance().saveContestPlayerData();
-        QuestsManager.getInstance().saveQuests();
+        ContestManager.saveContestData();
+        ContestManager.saveContestPlayerData();
+        QuestsManager.saveQuests();
 
         // - Mascottes
-        MascotsManager.saveMascots(MascotsManager.mascots);
-        CityManager.saveFreeClaims(CityManager.freeClaim);
-
-        // - Cube
-        CubeListener.clearCube(CubeListener.currentLocation);
+        MascotsManager.saveMascots();
 
         // - Cooldowns
         DynamicCooldownManager.saveCooldowns();
 
-        if (dbManager != null) {
-            try {
-                dbManager.close();
-            } catch (SQLException e) {
-                getLogger().severe("Impossible de fermer la connexion à la base de données");
-            }
+        // - Close all inventories
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.closeInventory();
         }
 
         getLogger().info("Plugin désactivé");
@@ -163,5 +156,34 @@ public class OMCPlugin extends JavaPlugin {
 
     public static boolean isUnitTestVersion() {
         return OMCPlugin.instance.getServer().getVersion().contains("MockBukkit");
+    }
+
+    private void logLoadMessage() {
+        Logger log = getLogger();
+
+        String pluginVersion = getDescription().getVersion();
+        String javaVersion = System.getProperty("java.version");
+        String server = Bukkit.getName() + " " + Bukkit.getVersion();
+
+        log.info("\u001B[1;35m   ____    _____   ______   _   _   __  __   _____       " + "\u001B[0;90mOpenMC " + pluginVersion + "\u001B[0m");
+        log.info("\u001B[1;35m  / __ \\  |  __ \\ |  ____| | \\ | | |  \\/  | / ____|      " + "\u001B[0;90m" + server + "\u001B[0m");
+        log.info("\u001B[1;35m | |  | | | |__) || |__    |  \\| | | \\  / || |           " + "\u001B[0;90mJava " + javaVersion + "\u001B[0m");
+        log.info("\u001B[1;35m | |  | | |  ___/ |  __|   | . ` | | |\\/| || |          \u001B[0m");
+        log.info("\u001B[1;35m | |__| | | |     | |____  | |\\  | | |  | || |____      \u001B[0m");
+        log.info("\u001B[1;35m  \\____/  |_|     |______| |_| \\_| |_|  |_| \\_____|   \u001B[0m");
+        log.info("");
+
+        String[] plugins = {
+                "WorldEdit", "WorldGuard", "LuckPerms", "ItemsAdder", "PlaceholderAPI", "FancyNpcs", "ProtocolLib"
+        };
+
+        for (String pluginName : plugins) {
+            Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
+            if (plugin != null && plugin.isEnabled()) {
+                log.info("  \u001B[32m✔ " + pluginName + " v" + plugin.getDescription().getVersion() + " trouvé \u001B[0m");
+            } else {
+                log.info("  \u001B[31m✘ " + pluginName + " (facultatif)\u001B[0m");
+            }
+        }
     }
 }

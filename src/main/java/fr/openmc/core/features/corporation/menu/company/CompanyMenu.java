@@ -6,7 +6,8 @@ import fr.openmc.api.menulib.utils.ItemUtils;
 import fr.openmc.api.menulib.utils.StaticSlots;
 import fr.openmc.core.features.corporation.company.Company;
 import fr.openmc.core.features.corporation.data.MerchantData;
-import fr.openmc.core.utils.api.ItemAdderApi;
+import fr.openmc.core.features.economy.EconomyManager;
+import fr.openmc.core.utils.api.ItemsAdderApi;
 import fr.openmc.core.utils.api.PapiApi;
 import fr.openmc.core.utils.customitems.CustomItemRegistry;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -14,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +35,7 @@ public class CompanyMenu extends PaginatedMenu {
 
     @Override
     public @Nullable Material getBorderMaterial() {
-        return Material.BLUE_STAINED_GLASS_PANE;
+        return null;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class CompanyMenu extends PaginatedMenu {
                 MerchantData merchantData = company.getMerchants().get(merchant);
                 itemMeta.setLore(List.of(
                         "§7■ A déposé §a" + merchantData.getAllDepositedItemsAmount() + " items",
-                        "§7■ A gagné §a" + merchantData.getMoneyWon() + "€"
+                        "§7■ A gagné §a" + merchantData.getMoneyWon() + EconomyManager.getEconomyIcon()
                 ));
             }));
         }
@@ -98,8 +100,8 @@ public class CompanyMenu extends PaginatedMenu {
         ItemBuilder bankButton = new ItemBuilder(this, Material.GOLD_INGOT, itemMeta -> {
             itemMeta.setDisplayName("§6Banque d'entreprise");
             itemMeta.setLore(List.of(
-                    "§7■ Solde: §a" + company.getBalance() + "€",
-                    "§7■ Chiffre d'affaires: §a" + company.getTurnover() + "€",
+                    "§7■ Solde: §a" + company.getBalance() + EconomyManager.getEconomyIcon(),
+                    "§7■ Chiffre d'affaires: §a" + company.getTurnover() + EconomyManager.getEconomyIcon(),
                     "§7■ Cliquez pour voir les transactions"
             ));
         });
@@ -125,7 +127,7 @@ public class CompanyMenu extends PaginatedMenu {
 
     @Override
     public @NotNull String getName() {
-        if (PapiApi.hasPAPI() && ItemAdderApi.hasItemAdder()) {
+        if (PapiApi.hasPAPI() && ItemsAdderApi.hasItemAdder()) {
             return PlaceholderAPI.setPlaceholders(getOwner(), "§r§f%img_offset_-11%%img_company_baltop_menu%");
         } else {
             return company.getName();
@@ -135,5 +137,15 @@ public class CompanyMenu extends PaginatedMenu {
     @Override
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
 
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 }

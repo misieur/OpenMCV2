@@ -6,25 +6,28 @@ import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.api.menulib.utils.StaticSlots;
 import fr.openmc.core.features.corporation.shops.Shop;
 import fr.openmc.core.features.corporation.shops.ShopItem;
+import fr.openmc.core.features.corporation.shops.Supply;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.utils.ItemUtils;
-import fr.openmc.core.utils.api.ItemAdderApi;
+import fr.openmc.core.utils.api.ItemsAdderApi;
 import fr.openmc.core.utils.api.PapiApi;
 import fr.openmc.core.utils.customitems.CustomItemRegistry;
+import fr.openmc.core.utils.messages.MessageType;
+import fr.openmc.core.utils.messages.MessagesManager;
+import fr.openmc.core.utils.messages.Prefix;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ShopStocksMenu extends PaginatedMenu {
 
@@ -45,7 +48,7 @@ public class ShopStocksMenu extends PaginatedMenu {
 
     @Override
     public @Nullable Material getBorderMaterial() {
-        return Material.BLUE_STAINED_GLASS_PANE;
+        return null;
     }
 
     @Override
@@ -59,10 +62,10 @@ public class ShopStocksMenu extends PaginatedMenu {
 
         for (ShopItem stock : shop.getItems()) {
             items.add(new ItemBuilder(this, stock.getItem().getType(), itemMeta -> {
-                itemMeta.setDisplayName(ChatColor.YELLOW + ShopItem.getItemName(stock.getItem()));
+                itemMeta.displayName(ShopItem.getItemName(stock.getItem()).color(NamedTextColor.GRAY).decorate(TextDecoration.BOLD));
                 itemMeta.setLore(List.of(
-                        "§7■ Quantité restante : " + EconomyManager.getInstance().getFormattedNumber(stock.getAmount()),
-                        "§7■ Prix de vente (par item) : " + EconomyManager.getInstance().getFormattedNumber(stock.getPricePerItem()),
+                        "§7■ Quantité restante : " + EconomyManager.getFormattedSimplifiedNumber(stock.getAmount()),
+                        "§7■ Prix de vente (par item) : " + EconomyManager.getFormattedNumber(stock.getPricePerItem()),
                         "§7" + (stock.getAmount() > 0 ? "■ Click gauche pour récupérer le stock" : "■ Click gauche pour retirer l'item de la vente")
                 ));
             }).setOnClick(inventoryClickEvent -> {
@@ -93,7 +96,7 @@ public class ShopStocksMenu extends PaginatedMenu {
 
     @Override
     public @NotNull String getName() {
-        if (PapiApi.hasPAPI() && ItemAdderApi.hasItemAdder()) {
+        if (PapiApi.hasPAPI() && ItemsAdderApi.hasItemAdder()) {
             return PlaceholderAPI.setPlaceholders(getOwner(), "§r§f%img_offset_-11%%img_large_shop_menu%");
         } else {
             return "Stocks de " + shop.getName();
@@ -105,30 +108,69 @@ public class ShopStocksMenu extends PaginatedMenu {
 
     }
 
-    private void accept() {
-        if (stock.getAmount() > 0) {
-            int maxPlace = ItemUtils.getFreePlacesForItem(getOwner(), stock.getItem());
-            if (maxPlace>0){
-                ItemStack toGive = stock.getItem().clone();
-                toGive.setAmount(Math.min(maxPlace, stock.getAmount()));
-                int amount = Math.min(maxPlace, stock.getAmount());
+    @Override
+    public void onClose(InventoryCloseEvent event) {
 
-                getOwner().getInventory().addItem(toGive);
-                stock.setAmount(stock.getAmount() - amount);
-                if (stock.getAmount()>0){
-                    getOwner().sendMessage("§6Vous avez récupéré §a" + amount + "§6 dans le stock de cet item");
-                } else {
-                    getOwner().sendMessage("§6Vous avez récupéré le stock restant de cet item");
-                }
-            } else {
-                getOwner().sendMessage("§cVous n'avez pas assez de place");
-            }
-        } else {
-            shop.removeItem(stock);
-            getOwner().sendMessage("§aL'item a bien été retiré du shop !");
-        }
-        getOwner().closeInventory();
     }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
+    }
+
+    private void accept() {
+        Player owner = getOwner();
+
+        if (stock.getAmount() <= 0) {
+            shop.removeItem(stock);
+            MessagesManager.sendMessage(owner, Component.text("§aL'item a bien été retiré du shop !"), Prefix.SHOP, MessageType.SUCCESS, false);
+            owner.closeInventory();
+            return;
+        }
+
+        int maxPlace = ItemUtils.getFreePlacesForItem(owner, stock.getItem());
+        if (maxPlace <= 0) {
+            MessagesManager.sendMessage(owner, Component.text("§cVous n'avez pas assez de place"), Prefix.SHOP, MessageType.INFO, false);
+            owner.closeInventory();
+            return;
+        }
+
+        int toTake = Math.min(stock.getAmount(), maxPlace);
+
+        ItemStack toGive = stock.getItem().clone();
+        toGive.setAmount(toTake);
+        owner.getInventory().addItem(toGive);
+        stock.setAmount(stock.getAmount() - toTake);
+
+        if (stock.getAmount() > 0) {
+            MessagesManager.sendMessage(owner, Component.text("§6Vous avez récupéré §a" + toTake + "§6 dans le stock de cet item"), Prefix.SHOP, MessageType.SUCCESS, false);
+        } else {
+            MessagesManager.sendMessage(owner, Component.text("§6Vous avez récupéré le stock restant de cet item"), Prefix.SHOP, MessageType.SUCCESS, false);
+        }
+
+        // Mise à jour des suppliers
+        int toRemove = toTake;
+        Iterator<Map.Entry<Long, Supply>> iterator = shop.getSuppliers().entrySet().iterator();
+        while (iterator.hasNext() && toRemove > 0) {
+            Map.Entry<Long, Supply> entry = iterator.next();
+            Supply supply = entry.getValue();
+
+            if (!supply.getItemId().equals(stock.getItemID())) continue;
+
+            int supplyAmount = supply.getAmount();
+
+            if (supplyAmount <= toRemove) {
+                toRemove -= supplyAmount;
+                iterator.remove();
+            } else {
+                supply.setAmount(supplyAmount - toRemove);
+                break;
+            }
+        }
+
+        owner.closeInventory();
+    }
+
 
     private void refuse() {
         getOwner().closeInventory();

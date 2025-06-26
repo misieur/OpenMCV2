@@ -15,7 +15,6 @@ import org.bukkit.entity.Player;
  */
 public class CityManageConditions {
 
-
     /**
      * Retourne un booleen pour dire si la ville peut etre rename
      *
@@ -33,6 +32,7 @@ public class CityManageConditions {
             MessagesManager.sendMessage(player, Component.text("Tu n'as pas la permission de renommer ta ville."), Prefix.CITY, MessageType.ERROR, false);
             return false;
         }
+
         return true;
     }
 
@@ -79,7 +79,12 @@ public class CityManageConditions {
             return false;
         }
 
-        if (!city.getPlayerWith(CPermission.OWNER).equals(player.getUniqueId())) {
+        if (city.isInWar()) {
+            MessagesManager.sendMessage(player, Component.text("§cVous ne pouvez pas supprimer votre ville pendant une guerre"), Prefix.CITY, MessageType.ERROR, false);
+            return false;
+        }
+
+        if (!city.getPlayerWithPermission(CPermission.OWNER).equals(player.getUniqueId())) {
             MessagesManager.sendMessage(player, Component.text("Tu n'es pas le maire de la ville"), Prefix.CITY, MessageType.ERROR, false);
             return false;
         }

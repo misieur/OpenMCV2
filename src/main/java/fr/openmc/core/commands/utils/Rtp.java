@@ -3,6 +3,7 @@ package fr.openmc.core.commands.utils;
 import fr.openmc.api.cooldown.DynamicCooldown;
 import fr.openmc.api.cooldown.DynamicCooldownManager;
 import fr.openmc.core.OMCPlugin;
+import fr.openmc.core.utils.PlayerUtils;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -55,22 +56,22 @@ public class Rtp {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (tryRtp(player)) {
-                    DynamicCooldownManager.use(player.getUniqueId().toString(), "player:rtp", 1000L * rtpCooldown);
-                } else {
-                    if ((tries+1) < maxTries) {
-                        player.sendActionBar("RTP: Tentative " + (tries + 1) + "/" + maxTries + " §cÉchec§r...");
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                rtpPlayer(player, tries + 1);
-                            }
-                        }.runTaskLaterAsynchronously(OMCPlugin.getInstance(), 20);
-                    } else {
-                        player.sendActionBar("Échec du RTP réessayez plus tard...");
-                        // On a déjà mis le cooldown au début
-                    }
+                if (tryRtp(player))
+                    return;
+
+                if ((tries + 1) >= maxTries) {
+                    // On a déjà mis le cooldown au début
+                    player.sendActionBar("Échec du RTP réessayez plus tard...");
+                    return;
                 }
+
+                player.sendActionBar("RTP: Tentative " + (tries + 1) + "/" + maxTries + " §cÉchec§r...");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        rtpPlayer(player, tries + 1);
+                    }
+                }.runTaskLaterAsynchronously(OMCPlugin.getInstance(), 20);
             }
         }.runTaskAsynchronously(OMCPlugin.getInstance());
 
@@ -100,14 +101,8 @@ public class Rtp {
     }
 
     public void tpPlayer(Player player, Location loc) {
-        player.sendTitle(PlaceholderAPI.setPlaceholders(player, "§0%img_tp_effect%"), "§a§lTéléportation...", 20, 10, 20);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                player.teleport(loc);
-                player.sendMessage(PlaceholderAPI.setPlaceholders(player, "§aVous avez été téléporté à §6X: §e" + loc.getBlockX() + "§6, Y:§e" + loc.getBlockY() + "§6, Z: §e" + loc.getBlockZ()));
-            }
-        }.runTaskLater(OMCPlugin.getInstance(), 10);
+        PlayerUtils.sendFadeTitleTeleport(player, loc);
+        player.sendMessage(PlaceholderAPI.setPlaceholders(player, "§aVous avez été téléporté à §6X: §e" + loc.getBlockX() + "§6, Y:§e" + loc.getBlockY() + "§6, Z: §e" + loc.getBlockZ()));
     }
 
 }

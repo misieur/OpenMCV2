@@ -1,6 +1,6 @@
 package fr.openmc.core.features.homes.command;
 
-import fr.openmc.core.features.homes.Home;
+import fr.openmc.core.features.homes.models.Home;
 import fr.openmc.core.features.homes.HomesManager;
 import fr.openmc.core.features.homes.utils.HomeUtil;
 import fr.openmc.core.utils.api.WorldGuardApi;
@@ -20,8 +20,6 @@ import revxrsal.commands.bukkit.annotation.CommandPermission;
 import java.util.List;
 
 public class RelocateHome {
-
-    private MessagesManager msg;
     private final HomesManager homeManager;
 
     public RelocateHome(HomesManager homeManager) {
@@ -53,8 +51,6 @@ public class RelocateHome {
                 MessagesManager.sendMessage(player, Component.text("§cCe joueur n'existe pas."), Prefix.OPENMC, MessageType.ERROR, true);
                 return;
             }
-
-            if (HomeUtil.checkName(player, msg, homeName)) return;
 
             List<Home> homes = HomesManager.getHomes(target.getUniqueId());
             for (Home h : homes) {

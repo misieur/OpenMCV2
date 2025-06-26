@@ -2,10 +2,12 @@ package fr.openmc.core.features.corporation.shops;
 
 import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.ItemBuilder;
+import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.corporation.MethodState;
 import fr.openmc.core.features.corporation.manager.CompanyManager;
 import fr.openmc.core.features.corporation.manager.ShopBlocksManager;
 import fr.openmc.core.features.economy.EconomyManager;
+import fr.openmc.core.utils.CacheOfflinePlayer;
 import fr.openmc.core.utils.ItemUtils;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
@@ -30,8 +32,6 @@ import java.util.*;
 public class Shop {
 
     private final ShopOwner owner;
-    private final EconomyManager economyManager = EconomyManager.getInstance();
-    private final ShopBlocksManager blocksManager = ShopBlocksManager.getInstance();
     private final List<ShopItem> items = new ArrayList<>();
     private final List<ShopItem> sales = new ArrayList<>();
     private final Map<Long, Supply> suppliers = new HashMap<>();
@@ -59,8 +59,7 @@ public class Shop {
      * @param shop the shop we want to check the stock
      */
     public static void checkStock(Shop shop) {
-        ShopBlocksManager blocksManager = ShopBlocksManager.getInstance();
-        Multiblock multiblock = blocksManager.getMultiblock(shop.getUuid());
+        Multiblock multiblock = ShopBlocksManager.getMultiblock(shop.getUuid());
 
         if (multiblock == null) {
             return;
@@ -68,7 +67,7 @@ public class Shop {
 
         Block stockBlock = multiblock.getStockBlock().getBlock();
         if (stockBlock.getType() != Material.BARREL) {
-            blocksManager.removeShop(shop);
+            ShopBlocksManager.removeShop(shop);
             return;
         }
 
@@ -105,7 +104,6 @@ public class Shop {
                     if (!possibleSuppliers.contains(UUID.fromString(supplierUUID))) {
                         continue;
                     }
-
                     boolean supplied = shop.supply(item, UUID.fromString(supplierUUID));
                     if (supplied) inventory.remove(item);
                 }
@@ -115,8 +113,7 @@ public class Shop {
 
 
     public String getName() {
-        //TODO CacheOfflinePlayer
-        return owner.isCompany() ? ("Shop #" + index) : Bukkit.getOfflinePlayer(owner.getPlayer()).getName() + "'s Shop";
+        return owner.isCompany() ? ("Shop #" + index) : CacheOfflinePlayer.getOfflinePlayer(owner.getPlayer()).getName() + "'s Shop";
     }
 
     public UUID getSupremeOwner() {
@@ -142,8 +139,9 @@ public class Shop {
      * @param price the price
      * @param amount the amount of it
      */
-    public boolean addItem(ItemStack itemStack, double price, int amount) {
-        ShopItem item = new ShopItem(itemStack, price);
+    public boolean addItem(ItemStack itemStack, double price, int amount, UUID itemID) {
+
+        ShopItem item = itemID == null ? new ShopItem(itemStack, price) : new ShopItem(itemStack, price, itemID);
         for (ShopItem shopItem : items) {
             if (shopItem.getItem().isSimilar(itemStack)) {
                 return true;
@@ -154,6 +152,14 @@ public class Shop {
         }
         items.add(item);
         return false;
+    }
+
+    public void addItem(ShopItem item){
+        items.add(item);
+    }
+
+    public void addSales(ShopItem item){
+        sales.add(item);
     }
 
     /**
@@ -172,6 +178,51 @@ public class Shop {
      */
     public void removeItem(ShopItem item) {
         items.remove(item);
+
+        Iterator<Map.Entry<Long, Supply>> iterator = suppliers.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Long, Supply> entry = iterator.next();
+            if (entry.getValue().getItemId().equals(item.getItemID())) {
+                iterator.remove();
+            }
+        }
+    }
+
+    public int recoverItemOf(ShopItem item, Player supplier) {
+        int amount = item.getAmount();
+
+        if (ItemUtils.getFreePlacesForItem(supplier,item.getItem()) < amount){
+            MessagesManager.sendMessage(supplier, Component.text("§cVous n'avez pas assez de place"), Prefix.SHOP, MessageType.INFO, false);
+            return 0;
+        }
+
+        int toRemove = 0;
+
+        Iterator<Map.Entry<Long, Supply>> iterator = suppliers.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Long, Supply> entry = iterator.next();
+            if (entry.getValue().getSupplierUUID().equals(supplier.getUniqueId())) {
+                if (entry.getValue().getItemId().equals(item.getItemID())){
+                    amount -= entry.getValue().getAmount();
+                    toRemove += entry.getValue().getAmount();
+                    if (amount >= 0){
+                        iterator.remove();
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (amount == 0){
+            items.remove(item);
+            MessagesManager.sendMessage(supplier, Component.text("§aL'item a bien été retiré du shop !"), Prefix.SHOP, MessageType.SUCCESS, false);
+        } else {
+            item.setAmount(amount);
+        }
+
+        return toRemove;
     }
 
     /**
@@ -180,93 +231,152 @@ public class Shop {
     public boolean supply(ItemStack item, UUID supplier) {
         for (ShopItem shopItem : items) {
             if (shopItem.getItem().getType().equals(item.getType())) {
+                int delay = 0;
                 shopItem.setAmount(shopItem.getAmount() + item.getAmount());
-                suppliers.put(System.currentTimeMillis(), new Supply(supplier, shopItem.getItemID(), item.getAmount()));
+                while (suppliers.containsKey(System.currentTimeMillis() + delay)){
+                    delay ++;
+                }
+                suppliers.put(System.currentTimeMillis() + delay, new Supply(supplier, shopItem.getItemID(), item.getAmount()));
                 return true;
             }
         }
         return false;
     }
 
+    public void addSupply(long time, Supply supply){
+        suppliers.put(time, supply);
+    }
+
+
     /**
-     * get the shop Icon
+     * buy an item in the shop
      *
      * @param item the item to buy
-     * @param amount the amount of it
+     * @param amountToBuy the amount of it
      * @param buyer the player who buy
      * @return a MethodState
      */
-    public MethodState buy(ShopItem item, int amount, Player buyer) {
+    public MethodState buy(ShopItem item, int amountToBuy, Player buyer) {
         if (!ItemUtils.hasAvailableSlot(buyer)) {
             return MethodState.SPECIAL;
         }
-        if (amount > item.getAmount()) {
+        if (amountToBuy > item.getAmount()) {
             return MethodState.WARNING;
         }
         if (isOwner(buyer.getUniqueId())) {
             return MethodState.FAILURE;
         }
-        if (!economyManager.withdrawBalance(buyer.getUniqueId(), item.getPrice(amount))) return MethodState.ERROR;
-        double basePrice = item.getPrice(amount);
-        item.setAmount(item.getAmount() - amount);
-        turnover += item.getPrice(amount);
+        if (!EconomyManager.withdrawBalance(buyer.getUniqueId(), item.getPrice(amountToBuy))) return MethodState.ERROR;
+        double basePrice = item.getPrice(amountToBuy);
+        turnover += item.getPrice(amountToBuy);
+
         if (owner.isCompany()) {
-            int amountToBuy = amount;
-            double price = item.getPrice(amount);
-            double companyCut = price * owner.getCompany().getCut();
-            double suppliersCut = price - companyCut;
+
+            double price = item.getPrice(amountToBuy);// prix total
+
+            double companyCut = price * owner.getCompany().getCut();// prix après cut
+
+            double suppliersCut = price - companyCut;// prix restant
+
             boolean supplied = false;
+
             List<Supply> supplies = new ArrayList<>();
             for (Map.Entry<Long, Supply> entry : suppliers.entrySet()) {
                 if (entry.getValue().getItemId().equals(item.getItemID())) {
                     supplies.add(entry.getValue());
                 }
             }
+
+            Map<UUID, Double> forSupplies = new HashMap<>();
+
             if (!supplies.isEmpty()) {
+
                 supplied = true;
+
                 for (Supply supply : supplies) {
-                    if (amountToBuy == 0) break;
-                    if (amountToBuy >= supply.getAmount()) {
-                        amountToBuy -= supply.getAmount();
-                        removeLatestSupply();
-                        double supplierCut = suppliersCut * ((double) supply.getAmount() / amount);
-                        economyManager.addBalance(supply.getSupplier(), supplierCut);
-                        Player supplier = Bukkit.getPlayer(supply.getSupplier());
-                        if (supplier!=null){
-                            MessagesManager.sendMessage(supplier, Component.text(buyer.getName() + " a acheté " + amount + " " + item.getItem().getType() + " pour " + basePrice + EconomyManager.getEconomyIcon() + ", vous avez reçu : " + supplierCut + EconomyManager.getEconomyIcon()), Prefix.SHOP, MessageType.SUCCESS, false);
+                    int suppliesAmount = supply.getAmount();
+
+                    if (amountToBuy == suppliesAmount){// si la quantité achetée correspond au suppliesAmount ( ex : 32 = 32 )
+                        EconomyManager.addBalance(supply.getSupplier(), suppliersCut);// ajoutez prix restant
+
+                        if (forSupplies.containsKey(supply.getSupplier())){
+                            double supCut = forSupplies.get(supply.getSupplier());
+                            forSupplies.replace(supply.getSupplier(), supCut + suppliersCut);
+                        } else {
+                            forSupplies.put(supply.getSupplier(), suppliersCut);
                         }
+                        removeLatestSupply();// retirer le supplier
+                        break;// arrêter la boucle
                     }
-                    else {
-                        supply.setAmount(supply.getAmount() - amountToBuy);
-                        double supplierCut = suppliersCut * ((double) amountToBuy / amount);
-                        economyManager.addBalance(supply.getSupplier(), supplierCut);
-                        Player supplier = Bukkit.getPlayer(supply.getSupplier());
-                        if (supplier!=null){
-                            MessagesManager.sendMessage(supplier, Component.text(buyer.getName() + " a acheté " + amount + " " + item.getItem().getType() + " pour " + basePrice + EconomyManager.getEconomyIcon() + ", vous avez reçu : " + supplierCut + EconomyManager.getEconomyIcon()), Prefix.SHOP, MessageType.SUCCESS, false);
+
+                    if (amountToBuy < suppliesAmount){// si la quantité achetée est inférieure au suppliesAmount ( ex : 32 < 64 )
+                        EconomyManager.addBalance(supply.getSupplier(), suppliersCut);
+                        suppliesAmount -= amountToBuy;
+                        supply.setAmount(suppliesAmount);
+
+                        if (forSupplies.containsKey(supply.getSupplier())){
+                            double supCut = forSupplies.get(supply.getSupplier());
+                            forSupplies.replace(supply.getSupplier(), supCut + suppliersCut);
+                        } else {
+                            forSupplies.put(supply.getSupplier(), suppliersCut);
                         }
                         break;
                     }
+
+                    else {// si la quantité achetée est supérieur au suppliesAmount ( ex : 64 > 32 )
+                        double supplierCut = (suppliesAmount * suppliersCut) / amountToBuy;
+                        suppliersCut -= supplierCut;
+                        amountToBuy -= suppliesAmount;
+                        EconomyManager.addBalance(supply.getSupplier(), supplierCut);
+
+                        if (forSupplies.containsKey(supply.getSupplier())){
+                            double supCut = forSupplies.get(supply.getSupplier());
+                            forSupplies.replace(supply.getSupplier(), supCut + supplierCut);
+                        } else {
+                            forSupplies.put(supply.getSupplier(), supplierCut);
+                        }
+                        removeLatestSupply();
+                    }
+
                 }
             }
+
             if (!supplied) {
                 return MethodState.ESCAPE;
             }
-            owner.getCompany().deposit(companyCut, buyer, "Vente", getName());
+
+            for (Map.Entry<UUID, Double> entry : forSupplies.entrySet()) {
+                UUID supplier = entry.getKey();
+                double supplierCut = entry.getValue();
+
+                Player player = Bukkit.getPlayer(supplier);
+                if (player!=null){
+                    MessagesManager.sendMessage(player, Component.text(buyer.getName() + " a acheté " + amountToBuy + " " + item.getItem().getType() + " pour " + basePrice + EconomyManager.getEconomyIcon() + ", vous avez reçu : " + supplierCut + EconomyManager.getEconomyIcon()), Prefix.SHOP, MessageType.SUCCESS, false);
+                }
+            }
+
+            owner.getCompany().depositWithoutWithdraw(companyCut, buyer, "Vente", getName());
         }
+
         else {
-            economyManager.addBalance(owner.getPlayer(), item.getPrice(amount));
+            EconomyManager.addBalance(owner.getPlayer(), item.getPrice(amountToBuy));
             Player player = Bukkit.getPlayer(owner.getPlayer());
             if (player!=null){
-                MessagesManager.sendMessage(player, Component.text(buyer.getName() + " a acheté " + amount + " " + item.getItem().getType() + " pour " + item.getPrice(amount) + EconomyManager.getEconomyIcon() + ", l'argent vous a été transféré !"), Prefix.SHOP, MessageType.SUCCESS, false);
+                MessagesManager.sendMessage(player, Component.text(buyer.getName() + " a acheté " + amountToBuy + " " + item.getItem().getType() + " pour " + item.getPrice(amountToBuy) + EconomyManager.getEconomyIcon() + ", l'argent vous a été transféré !"), Prefix.SHOP, MessageType.SUCCESS, false);
             }
         }
+
         ItemStack toGive = item.getItem().clone();
-        toGive.setAmount(amount);
+        toGive.setAmount(amountToBuy);
+
         List<ItemStack> stacks = ItemUtils.splitAmountIntoStack(toGive);
         for (ItemStack stack : stacks) {
             buyer.getInventory().addItem(stack);
         }
-        sales.add(item.copy().setAmount(amount));
+
+        sales.add(item.copy().setAmount(amountToBuy));
+        item.setAmount(item.getAmount() - amountToBuy);
+
         return MethodState.SUCCESS;
     }
 
@@ -284,6 +394,15 @@ public class Shop {
         }
     }
 
+    public boolean isSupplier(UUID playerUUID){
+        for (Map.Entry<Long, Supply> entry : suppliers.entrySet()) {
+            if (entry.getValue().getSupplierUUID().equals(playerUUID)){
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * get the shop Icon
      *
@@ -294,7 +413,7 @@ public class Shop {
         return new ItemBuilder(menu, fromShopMenu ? Material.GOLD_INGOT : Material.BARREL, itemMeta -> {
             itemMeta.setDisplayName("§e§l" + (fromShopMenu ? "Informations" : getName()));
             List<String> lore = new ArrayList<>();
-            lore.add("§7■ Chiffre d'affaire : " + EconomyManager.getInstance().getFormattedNumber(turnover));
+            lore.add("§7■ Chiffre d'affaire : " + EconomyManager.getFormattedNumber(turnover));
             lore.add("§7■ Ventes : §f" + sales.size());
             if (!fromShopMenu)
                 lore.add("§7■ Cliquez pour accéder au shop");
@@ -314,10 +433,9 @@ public class Shop {
      * get the shop with what player looking
      *
      * @param player the player we check
-     * @param shopBlocksManager the permission
      * @param onlyCash if we only check the cach register
      */
-    public static UUID getShopPlayerLookingAt(Player player, ShopBlocksManager shopBlocksManager, boolean onlyCash) {
+    public static UUID getShopPlayerLookingAt(Player player, boolean onlyCash) {
         Block targetBlock = player.getTargetBlockExact(5);
 
         if (targetBlock == null) return null;
@@ -326,7 +444,7 @@ public class Shop {
         if (onlyCash) {
             if (targetBlock.getType() != Material.OAK_SIGN && targetBlock.getType() != Material.BARRIER) return null;
         }
-        Shop shop = shopBlocksManager.getShop(targetBlock.getLocation());
+        Shop shop = ShopBlocksManager.getShop(targetBlock.getLocation());
         if (shop == null) return null;
         return shop.getUuid();
     }

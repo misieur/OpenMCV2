@@ -2,6 +2,7 @@ package fr.openmc.core.listeners;
 
 import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.commands.utils.SpawnManager;
+import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.features.friend.FriendManager;
 import fr.openmc.core.features.quests.QuestsManager;
 import fr.openmc.core.features.quests.objects.Quest;
@@ -23,6 +24,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.UUID;
 
 public class JoinMessageListener implements Listener {
+    private final double balanceOnJoin;
+
+    public JoinMessageListener() {
+        this.balanceOnJoin = OMCPlugin.getInstance().getConfig().getDouble("money-on-first-join", 500D);
+    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -30,9 +36,9 @@ public class JoinMessageListener implements Listener {
 
         MessagesManager.sendMessage(player, Component.text("Bienvenue sur OpenMC !"), Prefix.OPENMC, MessageType.INFO, false);
 
-        TabList.getInstance().updateTabList(player);
+        TabList.updateTabList(player);
 
-        FriendManager.getInstance().getFriendsAsync(player.getUniqueId()).thenAccept(friendsUUIDS -> {
+        FriendManager.getFriendsAsync(player.getUniqueId()).thenAccept(friendsUUIDS -> {
             for (UUID friendUUID : friendsUUIDS) {
                 final Player friend = player.getServer().getPlayer(friendUUID);
                 if (friend != null && friend.isOnline()) {
@@ -46,33 +52,40 @@ public class JoinMessageListener implements Listener {
 
         // Quest pending reward notification
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> {
-            for (Quest quest : QuestsManager.getInstance().getAllQuests()) {
-                if (quest.hasPendingRewards(player.getUniqueId())) {
-                    int pendingRewardsNumber = quest.getPendingRewardTiers(player.getUniqueId()).size();
-                    Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
-                        MessagesManager.sendMessage(player,
-                                Component.text("§aVous avez " + pendingRewardsNumber + " récompense(s) de quête en attente.")
-                                        .append(Component.text(" §6Cliquez ici pour les récupérer."))
-                                                .clickEvent(ClickEvent.runCommand("/quest")),
-                                Prefix.QUEST,
-                                MessageType.INFO,
-                                true);
-                    });
-                    break;
-                }
+            for (Quest quest : QuestsManager.getAllQuests()) {
+                if (!quest.hasPendingRewards(player.getUniqueId()))
+                    continue;
+
+                int pendingRewardsNumber = quest.getPendingRewardTiers(player.getUniqueId()).size();
+                Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
+                    MessagesManager.sendMessage(player,
+                            Component.text("§aVous avez " + pendingRewardsNumber + " récompense(s) de quête en attente.")
+                                    .append(Component.text(" §6Cliquez ici pour les récupérer."))
+                                            .clickEvent(ClickEvent.runCommand("/quest")),
+                            Prefix.QUEST,
+                            MessageType.INFO,
+                            true);
+                });
             }
         });
 
         event.joinMessage(Component.text("§8[§a§l+§8] §r" + "§r" + LuckPermsApi.getFormattedPAPIPrefix(player) + player.getName()));
 
         // Adjust player's spawn location
-        if (!player.hasPlayedBefore()) player.teleport(SpawnManager.getInstance().getSpawnLocation());
-
+        if (!player.hasPlayedBefore()) {
+            player.teleport(SpawnManager.getSpawnLocation());
+            EconomyManager.setBalance(player.getUniqueId(), this.balanceOnJoin);
+        }
 
         new BukkitRunnable() {
             @Override
             public void run() {
-                TabList.getInstance().updateTabList(player);
+                if (!player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                TabList.updateTabList(player);
             }
         }.runTaskTimer(OMCPlugin.getInstance(), 0L, 100L);
     }
@@ -81,9 +94,9 @@ public class JoinMessageListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         final Player player = event.getPlayer();
 
-        QuestsManager.getInstance().saveQuests(player.getUniqueId());
+        QuestsManager.saveQuests(player.getUniqueId());
 
-        FriendManager.getInstance().getFriendsAsync(player.getUniqueId()).thenAccept(friendsUUIDS -> {
+        FriendManager.getFriendsAsync(player.getUniqueId()).thenAccept(friendsUUIDS -> {
             for (UUID friendUUID : friendsUUIDS) {
                 final Player friend = player.getServer().getPlayer(friendUUID);
                 if (friend != null && friend.isOnline()) {

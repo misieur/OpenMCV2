@@ -6,6 +6,7 @@ import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.economy.BankManager;
 import fr.openmc.core.features.economy.EconomyManager;
+import fr.openmc.core.features.economy.models.EconomyPlayer;
 import fr.openmc.core.features.leaderboards.commands.LeaderboardCommands;
 import fr.openmc.core.features.leaderboards.listeners.LeaderboardListener;
 import fr.openmc.core.features.leaderboards.utils.PacketUtils;
@@ -43,46 +44,37 @@ import java.util.*;
 
 public class LeaderboardManager {
     @Getter
-    private static LeaderboardManager instance;
+    private static final Map<Integer, Map.Entry<String, Integer>> githubContributorsMap = new TreeMap<>();
     @Getter
-    private final Map<Integer, Map.Entry<String, Integer>> githubContributorsMap = new TreeMap<>();
+    private static final Map<Integer, Map.Entry<String, String>> playerMoneyMap = new TreeMap<>();
     @Getter
-    private final Map<Integer, Map.Entry<String, String>> playerMoneyMap = new TreeMap<>();
+    private static final Map<Integer, Map.Entry<String, String>> villeMoneyMap = new TreeMap<>();
     @Getter
-    private final Map<Integer, Map.Entry<String, String>> villeMoneyMap = new TreeMap<>();
+    private static final Map<Integer, Map.Entry<String, String>> playTimeMap = new TreeMap<>();
+    private static final File leaderBoardFile = new File(OMCPlugin.getInstance().getDataFolder() + "/data", "leaderboards.yml");
     @Getter
-    private final Map<Integer, Map.Entry<String, String>> playTimeMap = new TreeMap<>();
-    private final OMCPlugin plugin;
-    private final String repoOwner = "ServerOpenMC";
-    private final String repoName = "PluginV2";
-    private final File leaderBoardFile;
+    static ClientboundSetEntityDataPacket contributorsHologramMetadataPacket;
     @Getter
-    ClientboundSetEntityDataPacket contributorsHologramMetadataPacket;
+    static ClientboundSetEntityDataPacket moneyHologramMetadataPacket;
     @Getter
-    ClientboundSetEntityDataPacket moneyHologramMetadataPacket;
+    static ClientboundSetEntityDataPacket villeMoneyHologramMetadataPacket;
     @Getter
-    ClientboundSetEntityDataPacket villeMoneyHologramMetadataPacket;
+    static ClientboundSetEntityDataPacket playtimeHologramMetadataPacket;
     @Getter
-    ClientboundSetEntityDataPacket playtimeHologramMetadataPacket;
+    private static Location contributorsHologramLocation;
     @Getter
-    private Location contributorsHologramLocation;
+    private static Location moneyHologramLocation;
     @Getter
-    private Location moneyHologramLocation;
+    private static Location villeMoneyHologramLocation;
     @Getter
-    private Location villeMoneyHologramLocation;
-    @Getter
-    private Location playTimeHologramLocation;
-    private BukkitTask taskTimer;
-    private float scale;
+    private static Location playTimeHologramLocation;
+    private static BukkitTask taskTimer;
+    private static float scale;
 
-
-    public LeaderboardManager(OMCPlugin plugin) {
-        instance = this;
-        this.plugin = plugin;
-        this.leaderBoardFile = new File(OMCPlugin.getInstance().getDataFolder() + "/data", "leaderboards.yml");
+    public LeaderboardManager() {
         loadLeaderBoardConfig();
         CommandsManager.getHandler().register(new LeaderboardCommands());
-        new LeaderboardListener(this);
+        new LeaderboardListener();
         enable();
     }
 
@@ -92,7 +84,7 @@ public class LeaderboardManager {
      * @return A Component representing the GitHub contributors leaderboard.
      */
     public static Component createContributorsTextLeaderboard() {
-        var contributorsMap = LeaderboardManager.getInstance().getGithubContributorsMap();
+        var contributorsMap = LeaderboardManager.getGithubContributorsMap();
         if (contributorsMap.isEmpty()) {
             return Component.text("Aucun contributeur trouvé pour le moment.").color(NamedTextColor.RED);
         }
@@ -123,7 +115,7 @@ public class LeaderboardManager {
      * @return A Component representing the player money leaderboard.
      */
     public static Component createMoneyTextLeaderboard() {
-        var moneyMap = LeaderboardManager.getInstance().getPlayerMoneyMap();
+        var moneyMap = LeaderboardManager.getPlayerMoneyMap();
         if (moneyMap.isEmpty()) {
             return Component.text("Aucun joueur trouvé pour le moment.").color(NamedTextColor.RED);
         }
@@ -154,7 +146,7 @@ public class LeaderboardManager {
      * @return A Component representing the playtime leaderboard.
      */
     public static Component createCityMoneyTextLeaderboard() {
-        var moneyMap = LeaderboardManager.getInstance().getVilleMoneyMap();
+        var moneyMap = LeaderboardManager.getVilleMoneyMap();
         if (moneyMap.isEmpty()) {
             return Component.text("Aucune ville trouvée pour le moment.").color(NamedTextColor.RED);
         }
@@ -185,7 +177,7 @@ public class LeaderboardManager {
      * @return A Component representing the playtime leaderboard.
      */
     public static Component createPlayTimeTextLeaderboard() {
-        var playtimeMap = LeaderboardManager.getInstance().getPlayTimeMap();
+        var playtimeMap = LeaderboardManager.getPlayTimeMap();
         if (playtimeMap.isEmpty()) {
             return Component.text("Aucun joueur trouvé pour le moment.").color(NamedTextColor.RED);
         }
@@ -225,25 +217,25 @@ public class LeaderboardManager {
         };
     }
 
-    public void enable() {
+    public static void enable() {
         taskTimer = new BukkitRunnable() {
             private int i = 0;
 
             @Override
             public void run() {
                 if (i % 120 == 0)
-                    updateGithubContributorsMap(0); // toutes les 30 minutes pour ne pas être rate limitée par github
+                    updateGithubContributorsMap(); // toutes les 30 minutes pour ne pas être rate limitée par github
                 updatePlayerMoneyMap();
                 updateCityMoneyMap();
                 updatePlayTimeMap();
                 updateHolograms();
                 i++;
             }
-        }.runTaskTimerAsynchronously(plugin, 0, 300); // Toutes les 15 secondes en async sauf l'updateGithubContributorsMap qui est toutes les 30 minutes
+        }.runTaskTimerAsynchronously(OMCPlugin.getInstance(), 0, 300); // Toutes les 15 secondes en async sauf l'updateGithubContributorsMap qui est toutes les 30 minutes
         LeaderboardListener.getInstance().enable();
     }
 
-    public void disable() {
+    public static void disable() {
         taskTimer.cancel();
         LeaderboardListener.getInstance().disable();
     }
@@ -255,7 +247,7 @@ public class LeaderboardManager {
      * @param location The new location of the hologram.
      * @throws IOException If an error occurs while saving the configuration.
      */
-    public void setHologramLocation(String name, Location location) throws IOException {
+    public static void setHologramLocation(String name, Location location) throws IOException {
         FileConfiguration leaderBoardConfig = YamlConfiguration.loadConfiguration(leaderBoardFile);
         leaderBoardConfig.set(name + "-location", location);
         leaderBoardConfig.save(leaderBoardFile);
@@ -269,7 +261,7 @@ public class LeaderboardManager {
      * @param scale The new scale of the holograms.
      * @throws IOException If an error occurs while saving the configuration.
      */
-    public void setScale(float scale) throws IOException {
+    public static void setScale(float scale) throws IOException {
         FileConfiguration leaderBoardConfig = YamlConfiguration.loadConfiguration(leaderBoardFile);
         leaderBoardConfig.set("scale", scale);
         leaderBoardConfig.save(leaderBoardFile);
@@ -280,7 +272,7 @@ public class LeaderboardManager {
     /**
      * Loads the leaderboard configuration, including hologram locations.
      */
-    private void loadLeaderBoardConfig() {
+    private static void loadLeaderBoardConfig() {
         if (!leaderBoardFile.exists()) {
             leaderBoardFile.getParentFile().mkdirs();
             OMCPlugin.getInstance().saveResource("data/leaderboards.yml", false);
@@ -295,73 +287,107 @@ public class LeaderboardManager {
 
     /**
      * Updates the GitHub contributors leaderboard map by fetching data from the GitHub API.
-     * @param attempts The number of attempts made to fetch the data.
+     * Documentation GitHub API (REST) : https://docs.github.com/fr/rest/metrics/statistics?apiVersion=2022-11-28#get-all-contributor-commit-activity
      */
-    private void updateGithubContributorsMap(int attempts) {
-        // doc de l'api ici: https://docs.github.com/fr/rest/metrics/statistics?apiVersion=2022-11-28#get-all-contributor-commit-activity
-        String apiUrl = String.format("https://api.github.com/repos/%s/%s/stats/contributors", repoOwner, repoName);
+    private static void updateGithubContributorsMap() {
+        String repoOwner = "ServerOpenMC";
+        String repoName = "PluginV2";
+
+        Set<String> realContributors = getRealContributors(repoOwner, repoName);
+
+        fetchAndFilterContributorStats(repoOwner, repoName, realContributors);
+    }
+
+    private static Set<String> getRealContributors(String owner, String repo) {
+        Set<String> contributors = new HashSet<>();
+        String apiUrl = String.format("https://api.github.com/repos/%s/%s/contributors?per_page=100", owner, repo);
+
         try {
             HttpURLConnection con = (HttpURLConnection) new URI(apiUrl).toURL().openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("User-Agent", "OpenMC-BOT");
 
-            if (con.getResponseCode() == 202) { // Ce code indique que la requête est en cours de traitement par GitHub
-                if (attempts < 3) {
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> updateGithubContributorsMap(attempts + 1), 3000L); // Attend 15 secondes que github traite la requête et retente avec un essai en plus
-                } else {
-                    plugin.getLogger().warning("Impossible de récupérer les statistiques Github."); // Ce message n'est jamais censé s'afficher, mais on sait jamais
-                }
-                return;
-            } else if (con.getResponseCode() != 200) {
-                plugin.getLogger().warning("Erreur lors de la récupération des contributeurs GitHub: " + con.getResponseCode());
-                return;
-            }
+            if (con.getResponseCode() == 200) {
+                JSONArray array = (JSONArray) new JSONParser().parse(new InputStreamReader(con.getInputStream()));
 
-            JSONArray array = (JSONArray) new JSONParser().parse(new InputStreamReader(con.getInputStream()));
+                for (Object obj : array) {
+                    JSONObject contributor = (JSONObject) obj;
+                    String login = (String) contributor.get("login");
+                    String type = (String) contributor.get("type"); // "User" ou "Bot"
+
+                    if (!"Bot".equals(type)) {
+                        contributors.add(login);
+                    }
+                }
+            }
             con.disconnect();
-
-            List<Map.Entry<String, Integer>> statsList = new ArrayList<>();
-
-            for (Object obj : array) {
-                JSONObject contributor = (JSONObject) obj;
-                JSONObject author = (JSONObject) contributor.get("author");
-                if (author == null) continue;
-                String login = (String) author.get("login");
-                JSONArray weeks = (JSONArray) contributor.get("weeks");
-
-                int totalNetLines = 0;
-                for (Object wObj : weeks) {
-                    JSONObject week = (JSONObject) wObj;
-                    int added = ((Long) week.get("a")).intValue();
-                    int deleted = ((Long) week.get("d")).intValue();
-                    totalNetLines += added - deleted;
-                }
-                statsList.add(new AbstractMap.SimpleEntry<>(login, totalNetLines));
-            }
-
-            githubContributorsMap.clear();
-
-            statsList.sort((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()));
-            for (int i = 0; i < Math.min(10, statsList.size()); i++) {
-                githubContributorsMap.put(i + 1, statsList.get(i));
-            }
-
         } catch (Exception e) {
-            plugin.getLogger().warning("Erreur lors de la récupération des contributeurs GitHub: " + e.getMessage());
+            OMCPlugin.getInstance().getLogger().warning("Erreur lors de la récupération de la liste des contributeurs: " + e.getMessage());
+        }
+
+        return contributors;
+    }
+
+    private static void fetchAndFilterContributorStats(String owner, String repo, Set<String> allowedContributors) {
+        String apiUrl = String.format("https://api.github.com/repos/%s/%s/stats/contributors", owner, repo);
+
+        try {
+            HttpURLConnection con = (HttpURLConnection) new URI(apiUrl).toURL().openConnection();
+            con.setRequestMethod("GET");
+            con.setRequestProperty("User-Agent", "OpenMC-BOT");
+
+            if (con.getResponseCode() == 200) {
+                JSONArray statsArray = (JSONArray) new JSONParser().parse(new InputStreamReader(con.getInputStream()));
+                List<Map.Entry<String, Integer>> statsList = new ArrayList<>();
+
+                for (Object obj : statsArray) {
+                    JSONObject contributor = (JSONObject) obj;
+                    JSONObject author = (JSONObject) contributor.get("author");
+                    if (author == null) continue;
+
+                    String login = (String) author.get("login");
+                    if (!allowedContributors.contains(login)) continue;
+
+                    // Calcul des contributions
+                    JSONArray weeks = (JSONArray) contributor.get("weeks");
+                    int totalNetLines = 0;
+                    for (Object wObj : weeks) {
+                        JSONObject week = (JSONObject) wObj;
+                        totalNetLines += ((Long) week.get("a")).intValue() - ((Long) week.get("d")).intValue();
+                    }
+
+                    if (totalNetLines > 0) {
+                        statsList.add(new AbstractMap.SimpleEntry<>(login, totalNetLines));
+                    }
+                }
+
+                // Tri et affichage du classement
+                statsList.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
+                githubContributorsMap.clear();
+
+                for (int i = 0; i < Math.min(10, statsList.size()); i++) {
+                    githubContributorsMap.put(i + 1, statsList.get(i));
+                }
+            }
+            con.disconnect();
+        } catch (Exception e) {
+            OMCPlugin.getInstance().getLogger().warning("Erreur lors de la récupération des stats: " + e.getMessage());
         }
     }
 
     /**
      * Updates the player money leaderboard map by sorting and formatting player balances.
      */
-    private void updatePlayerMoneyMap() {
+    private static void updatePlayerMoneyMap() {
         playerMoneyMap.clear();
         int rank = 1;
-        Map<UUID, Double> combinedBalances = new HashMap<>(EconomyManager.getBalances());
 
-        BankManager.getBanks().forEach((uuid, money) -> {
-            combinedBalances.merge(uuid, money, Double::sum);
-        });
+        Map<UUID, EconomyPlayer> balances = EconomyManager.getBalances();
+        Map<UUID, Double> combinedBalances = new HashMap<>();
+        balances.forEach((player, balance) -> combinedBalances.put(player, balance.getBalance()));
+
+        BankManager.getBanks().forEach((uuid, bank) -> combinedBalances.merge(uuid, bank.getBalance(), Double::sum));
+
         for (var entry : combinedBalances.entrySet().stream()
                 .sorted((entry1, entry2) -> Double.compare(entry2.getValue(), entry1.getValue()))
                 .limit(10)
@@ -375,7 +401,7 @@ public class LeaderboardManager {
     /**
      * Updates the city money leaderboard map by sorting and formatting city balances.
      */
-    private void updateCityMoneyMap() {
+    private static void updateCityMoneyMap() {
         villeMoneyMap.clear();
         int rank = 1;
         for (City city : CityManager.getCities().stream()
@@ -391,7 +417,7 @@ public class LeaderboardManager {
     /**
      * Updates the playtime leaderboard map by sorting and formatting player playtime.
      */
-    private void updatePlayTimeMap() {
+    private static void updatePlayTimeMap() {
         playTimeMap.clear();
         int rank = 1;
         for (OfflinePlayer player : Arrays.stream(Bukkit.getOfflinePlayers())
@@ -407,25 +433,25 @@ public class LeaderboardManager {
     /**
      * Updates the holograms for all leaderboards by sending ENTITY_METADATA packets to players.
      */
-    public void updateHolograms() {
+    public static void updateHolograms() {
         if (contributorsHologramLocation != null) {
             String text = JSONComponentSerializer.json().serialize(createContributorsTextLeaderboard());
-            contributorsHologramMetadataPacket = createMetadataPacket(text, 100000);
+            contributorsHologramMetadataPacket = createMetadataPacket(text, -610329143);
             updateHologram(contributorsHologramLocation.getWorld().getPlayersSeeingChunk(contributorsHologramLocation.getChunk()), contributorsHologramMetadataPacket); // On met 100000 à l'id de l'entité pour pouvoir la modifier facilement
         }
         if (moneyHologramLocation != null) {
             String text = JSONComponentSerializer.json().serialize(createMoneyTextLeaderboard());
-            moneyHologramMetadataPacket = createMetadataPacket(text, 100001);
+            moneyHologramMetadataPacket = createMetadataPacket(text, -102388303);
             updateHologram(moneyHologramLocation.getWorld().getPlayersSeeingChunk(moneyHologramLocation.getChunk()), moneyHologramMetadataPacket);
         }
         if (villeMoneyHologramLocation != null) {
             String text = JSONComponentSerializer.json().serialize(createCityMoneyTextLeaderboard());
-            villeMoneyHologramMetadataPacket = createMetadataPacket(text, 100002);
+            villeMoneyHologramMetadataPacket = createMetadataPacket(text, -699947630);
             updateHologram(villeMoneyHologramLocation.getWorld().getPlayersSeeingChunk(villeMoneyHologramLocation.getChunk()), villeMoneyHologramMetadataPacket);
         }
         if (playTimeHologramLocation != null) {
             String text = JSONComponentSerializer.json().serialize(createPlayTimeTextLeaderboard());
-            playtimeHologramMetadataPacket = createMetadataPacket(text, 100003);
+            playtimeHologramMetadataPacket = createMetadataPacket(text, -348090140);
             updateHologram(playTimeHologramLocation.getWorld().getPlayersSeeingChunk(playTimeHologramLocation.getChunk()), playtimeHologramMetadataPacket);
         }
     }
@@ -437,7 +463,7 @@ public class LeaderboardManager {
      * @param id   The entity ID of the hologram.
      * @return A PacketContainer containing the metadata for the hologram.
      */
-    private ClientboundSetEntityDataPacket createMetadataPacket(String text, int id) {
+    private static ClientboundSetEntityDataPacket createMetadataPacket(String text, int id) {
         return PacketUtils.getSetEntityDataPacket(
                 id,
                 text,
@@ -456,7 +482,7 @@ public class LeaderboardManager {
      *
      * @param players The players who will receive the packet.
      */
-    public void updateHologram(Collection<Player> players, ClientboundSetEntityDataPacket metadataPacket) {
+    public static void updateHologram(Collection<Player> players, ClientboundSetEntityDataPacket metadataPacket) {
         if (players.isEmpty()) return;
         players.forEach(player -> {
             ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();

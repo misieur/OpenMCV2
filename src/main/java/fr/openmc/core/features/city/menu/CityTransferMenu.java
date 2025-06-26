@@ -1,6 +1,5 @@
 package fr.openmc.core.features.city.menu;
 
-
 import fr.openmc.api.menulib.PaginatedMenu;
 import fr.openmc.api.menulib.default_menu.ConfirmMenu;
 import fr.openmc.api.menulib.utils.ItemBuilder;
@@ -20,6 +19,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,54 +47,53 @@ public class CityTransferMenu extends PaginatedMenu {
         List<ItemStack> items = new ArrayList<>();
         Player player = getOwner();
 
-        try {
-            City city = CityManager.getPlayerCity(player.getUniqueId());
-            assert city != null;
+        City city = CityManager.getPlayerCity(player.getUniqueId());
+        assert city != null;
 
-            boolean hasPermissionOwner = city.hasPermission(player.getUniqueId(), CPermission.OWNER);
+        boolean hasPermissionOwner = city.hasPermission(player.getUniqueId(), CPermission.OWNER);
 
             for (UUID uuid : city.getMembers()) {
-                if (uuid.equals(city.getPlayerWith(CPermission.OWNER))) {
+                if (uuid.equals(city.getPlayerWithPermission(CPermission.OWNER))) {
                     continue;
                 }
 
-                OfflinePlayer playerOffline = CacheOfflinePlayer.getOfflinePlayer(uuid);
+            OfflinePlayer playerOffline = CacheOfflinePlayer.getOfflinePlayer(uuid);
 
-                items.add(new ItemBuilder(this, ItemUtils.getPlayerSkull(uuid), itemMeta -> {
-                    itemMeta.displayName(Component.text("Membre " + playerOffline.getName()).decoration(TextDecoration.ITALIC, false));
-                    itemMeta.lore(List.of(
-                            Component.text("§7Voulez-vous donner à §d" + playerOffline.getName() + " §7votre ville ?"),
-                            Component.text("§e§lCLIQUEZ ICI POUR CONFIRMER")
-                    ));
-                }).setOnClick(inventoryClickEvent -> {
-                    if (!hasPermissionOwner) {
-                        MessagesManager.sendMessage(player, MessagesManager.Message.PLAYERNOOWNER.getMessage(), Prefix.CITY, MessageType.ERROR, false);
-                        return;
-                    }
+            items.add(new ItemBuilder(this, ItemUtils.getPlayerSkull(uuid), itemMeta -> {
+                itemMeta.displayName(Component.text("Membre " + playerOffline.getName()).decoration(TextDecoration.ITALIC, false));
+                itemMeta.lore(List.of(
+                        Component.text("§7Voulez-vous donner à §d" + playerOffline.getName() + " §7votre ville ?"),
+                        Component.text("§e§lCLIQUEZ ICI POUR CONFIRMER")
+                ));
+            }).setOnClick(inventoryClickEvent -> {
+                if (!hasPermissionOwner) {
+                    MessagesManager.sendMessage(player, MessagesManager.Message.PLAYERNOOWNER.getMessage(), Prefix.CITY, MessageType.ERROR, false);
+                    return;
+                }
 
-                    ConfirmMenu menu = new ConfirmMenu(player,
-                            () -> {
-                                city.changeOwner(playerOffline.getUniqueId());
-                                MessagesManager.sendMessage(player, Component.text("Le nouveau maire est "+ playerOffline.getName()), Prefix.CITY, MessageType.SUCCESS, false);
+                ConfirmMenu menu = new ConfirmMenu(player,
+                        () -> {
+                            city.changeOwner(playerOffline.getUniqueId());
+                            MessagesManager.sendMessage(player, Component.text("Le nouveau maire est " + playerOffline.getName()), Prefix.CITY, MessageType.SUCCESS, false);
 
-                                if (playerOffline.isOnline()) {
-                                    MessagesManager.sendMessage((Player) playerOffline, Component.text("Vous êtes devenu le maire de la ville"), Prefix.CITY, MessageType.INFO, true);
-                                }
-                                player.closeInventory();
-                            },
-                            () -> player.closeInventory(),
-                            List.of(Component.text("§7Voulez-vous vraiment donner la ville à " + playerOffline.getName() + " ?")),
-                            List.of(Component.text("§7Vous allez garder la ville " + playerOffline.getName())));
-                    menu.open();
-                }));
-            }
-            return items;
-        } catch (Exception e) {
-            MessagesManager.sendMessage(player, Component.text("§cUne Erreur est survenue, veuillez contacter le Staff"), Prefix.OPENMC, MessageType.ERROR, false);
-            player.closeInventory();
-            e.printStackTrace();
+                            if (playerOffline.isOnline()) {
+                                MessagesManager.sendMessage((Player) playerOffline, Component.text("Vous êtes devenu le maire de la ville"), Prefix.CITY, MessageType.INFO, true);
+                            }
+                            player.closeInventory();
+                        },
+                        () -> player.closeInventory(),
+                        List.of(Component.text("§7Voulez-vous vraiment donner la ville à " + playerOffline.getName() + " ?")),
+                        List.of(Component.text("§7Vous allez garder la ville " + playerOffline.getName())));
+                menu.open();
+            }));
         }
+
         return items;
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 
     @Override
@@ -119,6 +118,11 @@ public class CityTransferMenu extends PaginatedMenu {
 
     @Override
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
+        //empty
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
         //empty
     }
 }

@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,17 +23,14 @@ import java.util.function.Consumer;
 
 public class ConfirmMenu extends Menu {
 
-    private final AdminShopManager shopManager;
     private final ShopItem shopItem;
     private final boolean isBuying;
     private int quantity;
     private final Menu previousMenu;
     private final int maxQuantity;
 
-    public ConfirmMenu(Player owner, AdminShopManager shopManager,
-                       ShopItem shopItem, boolean isBuying, Menu previousMenu) {
+    public ConfirmMenu(Player owner, ShopItem shopItem, boolean isBuying, Menu previousMenu) {
         super(owner);
-        this.shopManager = shopManager;
         this.shopItem = shopItem;
         this.previousMenu = previousMenu;
         this.isBuying = isBuying;
@@ -63,8 +61,8 @@ public class ConfirmMenu extends Menu {
 
         List<Component> lore = List.of(
                 Component.text("§8■ §eQuantité: §f" + quantity + " §7(§f" + quantityToStack + "§7 stack" + (quantityToStack > 1 ? "s" : "") + ")"),
-                Component.text("§8■ §ePrix unitaire: §a" + shopManager.priceFormat.format(pricePerUnit) + EconomyManager.getEconomyIcon()),
-                Component.text("§8■ §ePrix total: §a" + shopManager.priceFormat.format(totalPrice) + EconomyManager.getEconomyIcon())
+                Component.text("§8■ §ePrix unitaire: §a" + AdminShopManager.priceFormat.format(pricePerUnit) + EconomyManager.getEconomyIcon()),
+                Component.text("§8■ §ePrix total: §a" + AdminShopManager.priceFormat.format(totalPrice) + EconomyManager.getEconomyIcon())
         );
 
         content.put(9, new ItemBuilder(this, CustomItemRegistry.getByName("omc_menus:refuse_btn").getBest(), meta -> {
@@ -93,7 +91,7 @@ public class ConfirmMenu extends Menu {
         }));
 
         content.put(14, createQuantityButton("+1", CustomItemRegistry.getByName("omc_menus:1_btn").getBest(), event -> {
-            if (!isBuying && shopManager.hasEnoughItems(getOwner(), shopItem.getMaterial(), quantity + 1)) {
+            if (!isBuying && AdminShopManager.hasEnoughItems(getOwner(), shopItem.getMaterial(), quantity + 1)) {
                 quantity = Math.min(maxQuantity, countPlayerItems(getOwner(), shopItem.getMaterial()));
             } else if (quantity < maxQuantity) {
                 quantity++;
@@ -102,7 +100,7 @@ public class ConfirmMenu extends Menu {
         }));
 
         content.put(15, createQuantityButton("+10", CustomItemRegistry.getByName("omc_menus:plus_btn").getBest(), event -> {
-            if (!isBuying && shopManager.hasEnoughItems(getOwner(), shopItem.getMaterial(), quantity + 10)) {
+            if (!isBuying && AdminShopManager.hasEnoughItems(getOwner(), shopItem.getMaterial(), quantity + 10)) {
                 quantity = Math.min(maxQuantity, countPlayerItems(getOwner(), shopItem.getMaterial()));
             } else if (quantity < maxQuantity) {
                 quantity += 10;
@@ -111,7 +109,7 @@ public class ConfirmMenu extends Menu {
         }));
 
         content.put(16, createQuantityButton("+64", CustomItemRegistry.getByName("omc_menus:64_btn").getBest(), event -> {
-            if (!isBuying && shopManager.hasEnoughItems(getOwner(), shopItem.getMaterial(), quantity + 64)) {
+            if (!isBuying && AdminShopManager.hasEnoughItems(getOwner(), shopItem.getMaterial(), quantity + 64)) {
                 quantity = Math.min(maxQuantity, countPlayerItems(getOwner(), shopItem.getMaterial()));
             } else if (quantity < maxQuantity) {
                 quantity += 64;
@@ -123,8 +121,8 @@ public class ConfirmMenu extends Menu {
             meta.displayName(Component.text("§aAccepter"));
         }).setOnClick(event -> {
             getOwner().closeInventory();
-            if (isBuying) shopManager.buyItem(getOwner(), shopItem.getId(), quantity);
-            else shopManager.sellItem(getOwner(), shopItem.getId(), quantity);
+            if (isBuying) AdminShopManager.buyItem(getOwner(), shopItem.getId(), quantity);
+            else AdminShopManager.sellItem(getOwner(), shopItem.getId(), quantity);
         }));
 
         return content;
@@ -162,5 +160,15 @@ public class ConfirmMenu extends Menu {
             if (item != null && item.getType() == material)
                 count += item.getAmount();
         return count;
+    }
+
+    @Override
+    public void onClose(InventoryCloseEvent event) {
+        //empty
+    }
+
+    @Override
+    public List<Integer> getTakableSlot() {
+        return List.of();
     }
 }
