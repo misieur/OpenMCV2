@@ -3,9 +3,9 @@ package fr.openmc.api.packetmenulib;
 import fr.openmc.api.packetmenulib.menu.Menu;
 import fr.openmc.api.packetmenulib.utils.PacketUtils;
 import lombok.Getter;
-import net.minecraft.world.inventory.MenuType;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -30,29 +30,39 @@ public final class PacketMenuLib {
     }
 
     public static void openMenu(Menu menu, Player player) {
-        int windowId = PacketListener.getInstance().getLastWindowId().getOrDefault(player.getUniqueId(), 0) + 1;
+        int windowId = ((CraftPlayer) player).getHandle().nextContainerCounter();
         windowIds.put(player.getUniqueId(), windowId);
         PacketUtils.sendOpenInventoryPacket(player, windowId, menu.getInventoryType().getMenuType(), menu.getTitle());
-        updateMenu(menu, player, 1);
         openMenus.put(player.getUniqueId(), menu);
+        updateMenu(menu, player, 1);
     }
 
     public static void closeMenu(Player player) {
-        PacketUtils.sendCloseInventoryPacket(player, windowIds.get(player.getUniqueId()));
+        Integer windowId = windowIds.get(player.getUniqueId());
+        if (windowId != null) {
+            PacketUtils.sendCloseInventoryPacket(player, windowId);
+        }
         windowIds.remove(player.getUniqueId());
         openMenus.remove(player.getUniqueId());
         updateInv(player);
     }
 
     public static void updateMenu(Menu menu, Player player, Integer stateId) {
+        UUID playerUUID = player.getUniqueId();
+        Integer windowId = windowIds.get(playerUUID);
+
+        if (windowId == null) {
+            openMenus.remove(playerUUID);
+            return;
+        }
         ItemStack cursorItem = menu.isCursorItemEnabled() ? getCursorItem() : null;
         List<ItemStack> items = createItemList(menu);
-        PacketUtils.sendContainerContentPacket(player, windowIds.get(player.getUniqueId()),stateId , items, cursorItem);
+        PacketUtils.sendContainerContentPacket(player, windowId, stateId, items, cursorItem);
     }
 
     public static void updateInv(Player player) {
         List<ItemStack> items = getPlayerItems(player);
-        PacketUtils.sendContainerContentPacket(player, 0,1 , items, new ItemStack(Material.AIR));
+        PacketUtils.sendContainerContentPacket(player, 0, 1, items, new ItemStack(Material.AIR));
     }
 
     private static ItemStack getCursorItem() {

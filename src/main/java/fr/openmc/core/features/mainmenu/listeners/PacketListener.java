@@ -6,6 +6,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import lombok.Getter;
 import net.minecraft.advancements.*;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.network.chat.Component;
@@ -22,6 +23,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -31,6 +33,10 @@ public class PacketListener implements Listener {
 
     private final OMCPlugin plugin;
     private final ClientboundUpdateAdvancementsPacket advancementPacket;
+    @Getter
+    private static final Map<UUID, ClientboundUpdateAdvancementsPacket> advancementPackets = new HashMap<>();
+    @Getter
+    private static final List<UUID> enabledAdvancements = new ArrayList<>();
 
     // #ProtocolLib sucks
     public PacketListener(OMCPlugin plugin) {
@@ -81,6 +87,7 @@ public class PacketListener implements Listener {
     public void inject(Player player) {
         ServerGamePacketListenerImpl connection = ((CraftPlayer) player).getHandle().connection;
         Channel channel = connection.connection.channel;
+        UUID playerUUID = player.getUniqueId();
 
         if (channel.pipeline().get("packet_listener") != null) return;
 
@@ -95,6 +102,8 @@ public class PacketListener implements Listener {
                                 MainMenu.openMainMenu(player);
                             }
                         }.runTask(plugin);
+                    } else if (packet.getAction() == ServerboundSeenAdvancementsPacket.Action.CLOSED_SCREEN && enabledAdvancements.contains(playerUUID)) {
+                        connection.connection.send(advancementPacket);
                     }
                 }
                 super.channelRead(ctx, msg);
@@ -102,7 +111,9 @@ public class PacketListener implements Listener {
 
             @Override
             public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-                if (msg instanceof ClientboundUpdateAdvancementsPacket) {
+                if (msg instanceof ClientboundUpdateAdvancementsPacket packet && !enabledAdvancements.contains(playerUUID)) {
+                    packet = new ClientboundUpdateAdvancementsPacket(true, packet.getAdded(), packet.getRemoved(), packet.getProgress(), true);
+                    advancementPackets.put(playerUUID, packet);
                     super.write(ctx, advancementPacket, promise);
                     return;
                 }
@@ -114,5 +125,11 @@ public class PacketListener implements Listener {
     @EventHandler
     void onPlayerJoin(PlayerJoinEvent event) {
         inject(event.getPlayer());
+    }
+
+    @EventHandler
+    void onPlayerQuit(PlayerQuitEvent event) {
+        advancementPackets.remove(event.getPlayer().getUniqueId());
+        enabledAdvancements.remove(event.getPlayer().getUniqueId());
     }
 }

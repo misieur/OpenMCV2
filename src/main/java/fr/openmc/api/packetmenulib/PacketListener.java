@@ -18,8 +18,6 @@ import java.util.*;
 public class PacketListener extends PacketAdapter {
     @Getter
     private static PacketListener instance;
-    @Getter
-    private final Map<UUID, Integer> lastWindowId = new HashMap<>();
 
     public PacketListener(Plugin plugin) {
         super(plugin, PacketType.Play.Client.WINDOW_CLICK, PacketType.Play.Client.CLOSE_WINDOW, PacketType.Play.Server.OPEN_WINDOW, PacketType.Play.Server.SET_SLOT);
@@ -32,8 +30,14 @@ public class PacketListener extends PacketAdapter {
         if (event.getPacketType() == PacketType.Play.Server.OPEN_WINDOW) {
             PacketContainer packet = event.getPacket();
             int windowId = packet.getIntegers().read(0);
-            UUID uuid = event.getPlayer().getUniqueId();
-            lastWindowId.put(uuid, windowId);
+            Player player = event.getPlayer();
+            UUID uuid = player.getUniqueId();
+
+            if (PacketMenuLib.getOpenMenus().containsKey(uuid) && PacketMenuLib.getWindowIds().get(uuid) != windowId) {
+                PacketMenuLib.getOpenMenus().get(uuid).onInventoryClose(new InventoryCloseEvent(player));
+                PacketMenuLib.getOpenMenus().remove(uuid);
+                PacketMenuLib.updateInv(Objects.requireNonNull(player));
+            }
         } else if (event.getPacketType() == PacketType.Play.Server.SET_SLOT && PacketMenuLib.getOpenMenus().containsKey(event.getPlayer().getUniqueId()))
             event.setCancelled(true);
     }
@@ -66,8 +70,8 @@ public class PacketListener extends PacketAdapter {
                             default -> ClickType.OTHER;
                         };
 
-                        menu.onInventoryClick(new InventoryClickEvent(clickType, slot, player));
                         PacketMenuLib.updateMenu(menu, player, stateId);
+                        menu.onInventoryClick(new InventoryClickEvent(clickType, slot, player));
                     }
                 }
             }

@@ -4,9 +4,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import fr.openmc.core.OMCPlugin;
-import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -24,7 +24,7 @@ public class PacketUtils {
 
             packet.getIntegers().write(0, containerId); // Window ID
             packet.getStructures().withType(MenuType.class).write(0, type);
-            packet.getChatComponents().write(0, WrappedChatComponent.fromJson(JSONComponentSerializer.json().serialize(title))); // Title
+            packet.getStructures().withType(Component.class).write(0, PaperAdventure.asVanilla(title));
             manager.sendServerPacket(player, packet);
         } catch (Exception e) {
             OMCPlugin.getInstance().getLogger().warning("An error occurred while sending the open inventory packet to " + player.getName() + ": " + e.getMessage());

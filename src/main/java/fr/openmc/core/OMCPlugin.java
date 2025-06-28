@@ -84,7 +84,7 @@ public class OMCPlugin extends JavaPlugin {
         new QuestProgressSaveManager();
         new TabList();
         if (!OMCPlugin.isUnitTestVersion()) { // Tous les trucs faits par misieur qui fonctionne à peu près
-            new LeaderboardManager(this);
+            new LeaderboardManager();
             new PacketMenuLib(this);
             new MainMenu(this);
         }
@@ -94,9 +94,6 @@ public class OMCPlugin extends JavaPlugin {
         new CompanyManager();// laisser apres Economy Manager
         new ContestManager();
         new PrivateMessageManager();
-
-        if (!OMCPlugin.isUnitTestVersion())
-            new LeaderboardManager();
 
         new MotdUtils();
         new TranslationManager(new File(this.getDataFolder(), "translations"), "fr");

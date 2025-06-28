@@ -7,6 +7,9 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
+/**
+ * Voir <a href="https://minecraft.wiki/w/Java_Edition_protocol/Inventory#Windows">https://minecraft.wiki/w/Java_Edition_protocol/Inventory#Windows</a>
+ */
 public interface Menu {
     Component getTitle();
     InventoryType getInventoryType();
