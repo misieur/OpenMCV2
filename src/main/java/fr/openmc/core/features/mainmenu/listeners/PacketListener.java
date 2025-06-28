@@ -31,7 +31,6 @@ import java.util.*;
 
 public class PacketListener implements Listener {
 
-    private final OMCPlugin plugin;
     private final ClientboundUpdateAdvancementsPacket advancementPacket;
     @Getter
     private static final Map<UUID, ClientboundUpdateAdvancementsPacket> advancementPackets = new HashMap<>();
@@ -40,7 +39,6 @@ public class PacketListener implements Listener {
 
     // #ProtocolLib sucks
     public PacketListener(OMCPlugin plugin) {
-        this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
         advancementPacket = createAdvancementPacket();
     }
@@ -101,7 +99,7 @@ public class PacketListener implements Listener {
                             public void run() {
                                 MainMenu.openMainMenu(player);
                             }
-                        }.runTask(plugin);
+                        }.runTask(OMCPlugin.getInstance());
                     } else if (packet.getAction() == ServerboundSeenAdvancementsPacket.Action.CLOSED_SCREEN && enabledAdvancements.contains(playerUUID)) {
                         connection.connection.send(advancementPacket);
                     }
