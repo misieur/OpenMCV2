@@ -63,6 +63,8 @@ public class OMCPlugin extends JavaPlugin {
         new WorldGuardApi();
         new ItemsAdderApi();
         new FancyNpcsApi();
+        if (!OMCPlugin.isUnitTestVersion())
+            new PacketMenuLib(this);
 
         logLoadMessage();
 
@@ -85,7 +87,6 @@ public class OMCPlugin extends JavaPlugin {
         new TabList();
         if (!OMCPlugin.isUnitTestVersion()) { // Tous les trucs faits par misieur qui fonctionne à peu près
             new LeaderboardManager();
-            new PacketMenuLib(this);
             new MainMenu(this);
         }
         new AdminShopManager();
