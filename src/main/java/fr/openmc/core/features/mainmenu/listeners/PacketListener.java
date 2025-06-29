@@ -43,7 +43,13 @@ public class PacketListener implements Listener {
         advancementPacket = createAdvancementPacket();
     }
 
+    /**
+     * Créé un packet de progrès vides avec écrit "Chargement..." en attendant que le menu principal soit affiché.
+     *
+     * @return Un packet {@link ClientboundUpdateAdvancementsPacket} avec les progrès vides.
+     */
     private static ClientboundUpdateAdvancementsPacket createAdvancementPacket() {
+        // Rien de très important ici, on crée justes les instances nécessaires pour le packet avec le minimum requis.
         DisplayInfo displayInfo = new DisplayInfo(
                 ItemStack.fromBukkitCopy(getInvisibleItem()),
                 Component.literal("Chargement..."),
