@@ -40,7 +40,7 @@ public class PacketListener implements Listener {
     // #ProtocolLib sucks
     public PacketListener(OMCPlugin plugin) {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        advancementPacket = createAdvancementPacket();
+        advancementPacket = createEmptyAdvancementPacket();
     }
 
     /**
@@ -48,7 +48,7 @@ public class PacketListener implements Listener {
      *
      * @return Un packet {@link ClientboundUpdateAdvancementsPacket} avec les progrès vides.
      */
-    private static ClientboundUpdateAdvancementsPacket createAdvancementPacket() {
+    private static ClientboundUpdateAdvancementsPacket createEmptyAdvancementPacket() {
         // Rien de très important ici, on crée justes les instances nécessaires pour le packet avec le minimum requis.
         DisplayInfo displayInfo = new DisplayInfo(
                 ItemStack.fromBukkitCopy(getInvisibleItem()),
