@@ -27,6 +27,7 @@ public enum Prefix {
     ACCOUTDETECTION("<gradient:#F45454:#545eb6>ᴀᴄᴄᴏᴜɴᴛ ᴅᴇᴛᴇᴄᴛɪᴏɴ</gradient>"),
     DEATH("<gradient:#FF0000:#FF7F7F>☠</gradient>"),
     SETTINGS("<gradient:#2C82E0:#67C8FF>ѕᴇᴛᴛɪɴɢѕ</gradient>"),
+    COSMETICS("<gradient:#FFB800:#F0DF49>ᴄᴏѕᴍᴇᴛɪᴄѕ</gradient>"),
 
     ;
 

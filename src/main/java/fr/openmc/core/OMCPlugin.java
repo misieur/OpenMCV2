@@ -7,6 +7,7 @@ import fr.openmc.core.commands.admin.freeze.FreezeManager;
 import fr.openmc.core.commands.utils.SpawnManager;
 import fr.openmc.core.features.accountdetection.AccountDetectionManager;
 import fr.openmc.core.features.adminshop.AdminShopManager;
+import fr.openmc.core.features.cosmetics.CosmeticManager;
 import fr.openmc.core.features.mainmenu.MainMenu;
 import fr.openmc.core.features.bossbar.BossbarManager;
 import fr.openmc.core.features.city.CityManager;
@@ -87,6 +88,7 @@ public class OMCPlugin extends JavaPlugin {
             new LeaderboardManager();
             new PacketMenuLib(this);
             new MainMenu(this);
+            new CosmeticManager(this);
         }
         new AdminShopManager();
         new AccountDetectionManager();
