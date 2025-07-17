@@ -21,12 +21,8 @@ import fr.openmc.core.features.city.sub.mascots.menu.MascotMenu;
 import fr.openmc.core.features.city.sub.mascots.menu.MascotsDeadMenu;
 import fr.openmc.core.features.city.sub.mascots.models.Mascot;
 import fr.openmc.core.features.city.sub.mayor.ElectionType;
+import fr.openmc.core.features.city.sub.mayor.actions.MayorCommandAction;
 import fr.openmc.core.features.city.sub.mayor.managers.MayorManager;
-import fr.openmc.core.features.city.sub.mayor.menu.MayorElectionMenu;
-import fr.openmc.core.features.city.sub.mayor.menu.MayorMandateMenu;
-import fr.openmc.core.features.city.sub.mayor.menu.create.MayorColorMenu;
-import fr.openmc.core.features.city.sub.mayor.menu.create.MayorCreateMenu;
-import fr.openmc.core.features.city.sub.mayor.menu.create.MenuType;
 import fr.openmc.core.utils.CacheOfflinePlayer;
 import fr.openmc.core.utils.DateUtils;
 import fr.openmc.core.utils.messages.MessageType;
@@ -89,23 +85,50 @@ public class CityMenu extends Menu {
 
         String mayorName = (city.getMayor() != null && city.getMayor().getName() != null) ? city.getMayor().getName() : "§7Aucun";
         NamedTextColor mayorColor = (city.getMayor() != null && city.getMayor().getName() != null) ? city.getMayor().getMayorColor() : NamedTextColor.DARK_GRAY;
+
+        List<Component> loreMillestoneCity;
+
+        loreMillestoneCity = List.of(
+                Component.text("§7Propriétaire de la Ville : " + CacheOfflinePlayer.getOfflinePlayer(city.getPlayerWithPermission(CPermission.OWNER)).getName()),
+                Component.text("§dMaire de la Ville §7: ").append(Component.text(mayorName).color(mayorColor).decoration(TextDecoration.ITALIC, false)),
+                Component.text("§7Membre(s) : " + city.getMembers().size()),
+                Component.text(""),
+                Component.text("§e§lCLIQUEZ ICI POUR MODIFIER LA VILLE")
+        );
+
+        inventory.put(3, new ItemBuilder(this, Material.NETHER_STAR, itemMeta -> {
+            itemMeta.itemName(Component.text("§d" + city.getName()));
+            itemMeta.lore(loreMillestoneCity);
+        }).setOnClick(inventoryClickEvent -> {
+            City cityCheck = CityManager.getPlayerCity(player.getUniqueId());
+            if (cityCheck == null) {
+                MessagesManager.sendMessage(player, MessagesManager.Message.PLAYERNOCITY.getMessage(), Prefix.CITY, MessageType.ERROR, false);
+                return;
+            }
+
+            if (hasPermissionOwner) {
+                CityModifyMenu menu = new CityModifyMenu(player);
+                menu.open();
+            }
+        }));
+
         List<Component> loreModifyCity;
 
-            if (hasPermissionRenameCity || hasPermissionOwner) {
-                loreModifyCity = List.of(
-                        Component.text("§7Propriétaire de la Ville : " + CacheOfflinePlayer.getOfflinePlayer(city.getPlayerWithPermission(CPermission.OWNER)).getName()),
-                        Component.text("§dMaire de la Ville §7: ").append(Component.text(mayorName).color(mayorColor).decoration(TextDecoration.ITALIC, false)),
-                        Component.text("§7Membre(s) : " + city.getMembers().size()),
-                        Component.text(""),
-                        Component.text("§e§lCLIQUEZ ICI POUR MODIFIER LA VILLE")
-                );
-            } else {
-                loreModifyCity = List.of(
-                        Component.text("§7Propriétaire de la Ville : " + CacheOfflinePlayer.getOfflinePlayer(city.getPlayerWithPermission(CPermission.OWNER)).getName()),
-                        Component.text("§dMaire de la Ville §7: ").append(Component.text(mayorName).color(mayorColor).decoration(TextDecoration.ITALIC, false)),
-                        Component.text("§7Membre(s) : " + city.getMembers().size())
-                );
-            }
+        if (hasPermissionRenameCity || hasPermissionOwner) {
+            loreModifyCity = List.of(
+                    Component.text("§7Propriétaire de la Ville : " + CacheOfflinePlayer.getOfflinePlayer(city.getPlayerWithPermission(CPermission.OWNER)).getName()),
+                    Component.text("§dMaire de la Ville §7: ").append(Component.text(mayorName).color(mayorColor).decoration(TextDecoration.ITALIC, false)),
+                    Component.text("§7Membre(s) : " + city.getMembers().size()),
+                    Component.text(""),
+                    Component.text("§e§lCLIQUEZ ICI POUR MODIFIER LA VILLE")
+            );
+        } else {
+            loreModifyCity = List.of(
+                    Component.text("§7Propriétaire de la Ville : " + CacheOfflinePlayer.getOfflinePlayer(city.getPlayerWithPermission(CPermission.OWNER)).getName()),
+                    Component.text("§dMaire de la Ville §7: ").append(Component.text(mayorName).color(mayorColor).decoration(TextDecoration.ITALIC, false)),
+                    Component.text("§7Membre(s) : " + city.getMembers().size())
+            );
+        }
 
         inventory.put(4, new ItemBuilder(this, Material.BOOKSHELF, itemMeta -> {
             itemMeta.itemName(Component.text("§d" + city.getName()));
@@ -293,33 +316,7 @@ public class CityMenu extends Menu {
                 return new ItemBuilder(this, Material.JUKEBOX, itemMeta -> {
                     itemMeta.displayName(Component.text("§6Les Elections"));
                     itemMeta.lore(finalLoreElections);
-                }).setOnClick(inventoryClickEvent -> {
-                    if (city.getElectionType() == ElectionType.ELECTION) {
-                        if (MayorManager.phaseMayor == 1) {
-                            MayorElectionMenu menu = new MayorElectionMenu(player);
-                            menu.open();
-                        } else {
-                            MayorMandateMenu menu = new MayorMandateMenu(player);
-                            menu.open();
-                        }
-                    } else {
-                        if (MayorManager.phaseMayor == 2) {
-                            MayorMandateMenu menu = new MayorMandateMenu(player);
-                            menu.open();
-                        } else if (MayorManager.phaseMayor == 1) {
-                            if (hasPermissionOwner) {
-                                if (!city.hasMayor()) {
-                                    Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
-                                        new MayorCreateMenu(player, null, null, null, MenuType.OWNER).open();
-                                    });
-                                } else {
-                                    new MayorColorMenu(player, null, null, null, "change", null).open();
-                                }
-
-                        }
-                    }
-                }
-            });
+                }).setOnClick(inventoryClickEvent -> MayorCommandAction.launchInteractionMenu(player));
         };
 
         MenuUtils.runDynamicItem(player, this, 23, electionItemSupplier)

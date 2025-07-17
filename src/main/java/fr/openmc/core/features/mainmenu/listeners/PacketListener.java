@@ -31,7 +31,6 @@ import java.util.*;
 
 public class PacketListener implements Listener {
 
-    private final OMCPlugin plugin;
     private final ClientboundUpdateAdvancementsPacket advancementPacket;
     @Getter
     private static final Map<UUID, ClientboundUpdateAdvancementsPacket> advancementPackets = new HashMap<>();
@@ -40,12 +39,17 @@ public class PacketListener implements Listener {
 
     // #ProtocolLib sucks
     public PacketListener(OMCPlugin plugin) {
-        this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        advancementPacket = createAdvancementPacket();
+        advancementPacket = createEmptyAdvancementPacket();
     }
 
-    private static ClientboundUpdateAdvancementsPacket createAdvancementPacket() {
+    /**
+     * Créé un packet de progrès vides avec écrit "Chargement..." en attendant que le menu principal soit affiché.
+     *
+     * @return Un packet {@link ClientboundUpdateAdvancementsPacket} avec les progrès vides.
+     */
+    private static ClientboundUpdateAdvancementsPacket createEmptyAdvancementPacket() {
+        // Rien de très important ici, on crée justes les instances nécessaires pour le packet avec le minimum requis.
         DisplayInfo displayInfo = new DisplayInfo(
                 ItemStack.fromBukkitCopy(getInvisibleItem()),
                 Component.literal("Chargement..."),
@@ -101,7 +105,7 @@ public class PacketListener implements Listener {
                             public void run() {
                                 MainMenu.openMainMenu(player);
                             }
-                        }.runTask(plugin);
+                        }.runTask(OMCPlugin.getInstance());
                     } else if (packet.getAction() == ServerboundSeenAdvancementsPacket.Action.CLOSED_SCREEN && enabledAdvancements.contains(playerUUID)) {
                         connection.connection.send(advancementPacket);
                     }

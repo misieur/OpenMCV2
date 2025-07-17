@@ -353,8 +353,7 @@ public class City {
             this.chunks = CityManager.getCityChunks(this);
 
         BlockVector2 coords = BlockVector2.at(chunkX, chunkZ);
-        if (!chunks.contains(coords))
-            chunks.remove(coords);
+        chunks.remove(coords);
 
         CityManager.unclaimChunk(this, coords);
     }
@@ -699,5 +698,16 @@ public class City {
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> {
             CityManager.saveCity(this);
         });
+    }
+
+    // ==================== City Milestone Methods ====================
+
+    /**
+     * Retrieves the power points of the city.
+     *
+     * @return The power points of the city, or 0 if not found.
+     */
+    public boolean getLevel() {
+        return WarManager.isCityInWar(cityUUID);
     }
 }
