@@ -12,6 +12,7 @@ import fr.openmc.core.features.city.sub.mascots.MascotsManager;
 import fr.openmc.core.features.city.sub.mayor.managers.MayorManager;
 import fr.openmc.core.features.contest.managers.ContestManager;
 import fr.openmc.core.features.corporation.manager.CompanyManager;
+import fr.openmc.core.features.cosmetics.CosmeticManager;
 import fr.openmc.core.features.displays.TabList;
 import fr.openmc.core.features.displays.bossbar.BossbarManager;
 import fr.openmc.core.features.displays.holograms.HologramLoader;
@@ -94,6 +95,7 @@ public class OMCPlugin extends JavaPlugin {
             new LeaderboardManager();
             new MainMenu(this);
             new HologramLoader();
+            CosmeticManager.enable(this);
         }
         new AdminShopManager();
         new AccountDetectionManager();

@@ -39,24 +39,15 @@ public class MathUtils {
         if (isSneaking && !isSwimming && !isGliding) {
             rotation.rotateX((float) Math.toRadians(30));
             offset.add(0, 0, 0.2f);
-        } else if (isSwimming) {
+        } else if (isSwimming && !isGliding) {
             rotation.rotateX((float) Math.toRadians(pitch+90));
             offset.add(0, 0.2f, -0.2f);
             origin.add(0, -0.5f, 0);
         } else if (isGliding) {
-            if (isSneaking) {
-                rotation.rotateX((float) Math.toRadians(pitch+120));
-                offset.add(0, 0.75f, -0.6f);
-                origin.add(0, -0.7f, 0);
-            } else {
-                rotation.rotateX((float) Math.toRadians(pitch+90));
-                offset.add(0, 1.2f, 0);
-                origin.add(0, -0.6f, 0);
-            }
-
+            return new Transformation(new Vector3f(0), new Quaternionf(), new Vector3f(0), new Quaternionf());
         }
         Vector3f translation;
-        if (offset.equals(new Vector3f(0, 0, 0))) {
+        if (offset.equals(new Vector3f(0, 0, 0), 0.0001f)) {
             translation = new Vector3f(0, 0, 0);
         } else {
             translation = MathUtils.rotatePointAroundOrigin(
@@ -65,6 +56,6 @@ public class MathUtils {
                     rotation
             );
         }
-        return new Transformation(translation, rotation, new Vector3f(1, 1, 1), new Quaternionf());
+        return new Transformation(translation, rotation, new Vector3f(1), new Quaternionf());
     }
 }

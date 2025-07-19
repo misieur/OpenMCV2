@@ -3,6 +3,7 @@ package fr.openmc.core.features.cosmetics.commands;
 import fr.openmc.core.features.cosmetics.CosmeticManager;
 import fr.openmc.core.features.cosmetics.CosmeticPointManager;
 import fr.openmc.core.features.cosmetics.bodycostmetics.BodyCosmetic;
+import fr.openmc.core.features.cosmetics.menu.CosmeticMenu;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
@@ -20,8 +21,8 @@ import java.util.UUID;
 @CommandPermission("omc.commands.cosmetics")
 public class CosmeticCommand {
     @DefaultFor("~")
-    public static void mainCommand(CommandSender sender) {
-
+    public static void mainCommand(Player player) {
+        new CosmeticMenu(player).open();
     }
 
     @Subcommand({"select"})

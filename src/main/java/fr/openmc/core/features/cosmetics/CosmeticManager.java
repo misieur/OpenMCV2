@@ -26,7 +26,7 @@ public class CosmeticManager {
     @Getter
     private static Map<UUID, BodyCosmetic> activatedCosmetics;
 
-    public CosmeticManager(JavaPlugin plugin) {
+    public static void enable(JavaPlugin plugin) {
         bodyCosmeticsManager = new BodyCosmeticsManager(plugin);
         new CosmeticListener(plugin, bodyCosmeticsManager);
         cosmetics = Set.of(new GoldWings(), new BlueBackPack(), new PinkBackPack());

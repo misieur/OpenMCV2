@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack;
 public class GoldWings implements BodyCosmetic {
 
     private static final ItemStack ITEM_STACK = CustomStack.getInstance("omc_cosmetics:gold_wings").getItemStack();
-    private static final String NAME = "Gold Wings";
+    private static final String NAME = "Ailles dorées";
     private static final int PRICE = 1000;
 
     @Override
