@@ -1,6 +1,7 @@
 package fr.openmc.core.utils;
 
 import dev.lone.itemsadder.api.CustomStack;
+import fr.openmc.core.features.mailboxes.MailboxManager;
 import fr.openmc.core.items.CustomItemRegistry;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
@@ -324,7 +325,7 @@ public class ItemUtils {
         if (!hasEnoughItems(player, aywenite, amount)) {
             MessagesManager.sendMessage(
                     player,
-                    Component.text("Vous n'avez pas assez d'§dAywenite §f("+amount+ " nécessaires)"),
+                    Component.text("Vous n'avez pas assez d'§dAywenite §f(" + amount + " nécessaires)"),
                     Prefix.OPENMC,
                     MessageType.ERROR,
                     true
@@ -333,6 +334,28 @@ public class ItemUtils {
         }
 
         removeItemsFromInventory(player, aywenite, amount);
+        return true;
+    }
+
+    public static boolean giveAywenite(Player player, int amount) {
+        ItemStack aywenite = CustomItemRegistry.getByName("omc_items:aywenite").getBest();
+        if (aywenite == null) return false;
+
+        aywenite.setAmount(amount);
+
+        if (!hasEnoughSpace(player, aywenite)) {
+            MessagesManager.sendMessage(
+                    player,
+                    Component.text("Vous n'avez pas assez de place dans votre inventaire pour recevoir " + amount + " d'§dAywenite§f. L'aywenite est disponible dans votre mailbox"),
+                    Prefix.OPENMC,
+                    MessageType.ERROR,
+                    true
+            );
+            MailboxManager.sendItems(player, player, new ItemStack[]{ aywenite });
+            return false;
+        }
+
+        player.getInventory().addItem(aywenite);
         return true;
     }
 
