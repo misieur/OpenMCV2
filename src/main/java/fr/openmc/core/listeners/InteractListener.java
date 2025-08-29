@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class InteractListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (event.useInteractedBlock() == Event.Result.DENY) return;
