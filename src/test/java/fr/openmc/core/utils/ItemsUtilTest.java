@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+/**
+ * TODO: Réactiver les tests quand MockBukkit fixera {@code  DIRT isn't an item}
+ */
 class ItemsUtilTest {
 
     @Disabled
