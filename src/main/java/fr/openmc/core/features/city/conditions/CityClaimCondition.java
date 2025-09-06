@@ -55,7 +55,7 @@ public class CityClaimCondition {
         double money = CityClaimAction.calculatePrice(city.getChunks().size());
 
         if (city.getBalance() < money) {
-            MessagesManager.sendMessage(player, Component.text("§cTu n'as pas assez d'Argent pour claim (" + money).append(Component.text(EconomyManager.getEconomyIcon() + " §cnécessaires)")).decoration(TextDecoration.ITALIC, false), Prefix.CITY, MessageType.ERROR, false);
+            MessagesManager.sendMessage(player, Component.text("§cTu n'as pas assez d'argent dans ta banque pour claim (" + money).append(Component.text(EconomyManager.getEconomyIcon() + " §cnécessaires)")).decoration(TextDecoration.ITALIC, false), Prefix.CITY, MessageType.ERROR, false);
             return false;
         }
 
