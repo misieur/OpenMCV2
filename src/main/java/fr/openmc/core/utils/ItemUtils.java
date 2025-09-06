@@ -109,26 +109,6 @@ public class ItemUtils {
     }
 
     /**
-     * Retourne le nombre d'item qui peut aller dans un Stack
-     *
-     * @param player Joueur pour acceder a son inventaire
-     * @param item   Item recherché pour completer un stack
-     * @return Le nombre d'item qui peut completer un stack
-     */
-    public static int getNumberItemToStack(Player player, ItemStack item) {
-        Inventory inventory = player.getInventory();
-        int numberitemtostack = 0;
-
-        for (ItemStack stack : inventory.getStorageContents()) {
-            if (stack != null && isSimilar(stack, item)) {
-                numberitemtostack = stack.getMaxStackSize() - stack.getAmount();
-            }
-        }
-        return numberitemtostack;
-    }
-
-
-    /**
      * Retourne le nombre de slot vide
      *
      * @param player Joueur pour acceder a son inventaire
@@ -246,19 +226,8 @@ public class ItemUtils {
      * @return {@code true} if the player has enough items, {@code false} otherwise
      */
     public static boolean hasEnoughItems(Player player, Material material, int amount) {
-        int totalItems = 0;
-        ItemStack[] contents = player.getInventory().getContents();
-
-        for (ItemStack is : contents) {
-            if (is != null && is.getType() == material) {
-                totalItems += is.getAmount();
-            }
-        }
-
-        if (amount == 0) return false;
-        return totalItems >= amount;
+        return hasEnoughItems(player, new ItemStack(material), amount);
     }
-
 
     /**
      * Dire si le joueur a des ou un slot de libre
