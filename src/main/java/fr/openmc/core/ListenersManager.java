@@ -34,7 +34,8 @@ public class ListenersManager {
                 new PlayerSettingsManager(),
                 new InteractListener(),
                 new ItemsAddersListener(),
-                new TicketListener()
+                new TicketListener(),
+                new AywenCapListener()
         );
     }
 
