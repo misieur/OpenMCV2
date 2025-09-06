@@ -126,8 +126,8 @@ public class EmoteListener implements Listener {
 
         Location loc = player.getLocation().clone();
 
-        loc.setYaw(180f);
-        loc.setPitch(0f);
+        loc.setYaw(-133f);
+        loc.setPitch(-8f);
 
         player.teleport(loc);
     }
