@@ -135,7 +135,7 @@ public class CityBankDepositMenu extends Menu {
 
             DialogInput.send(player, Component.text("Entrez le montant que vous voulez déposer"), MAX_LENGTH, input -> {
                         if (input == null) return;
-                        city.depositCityBank(player, String.valueOf(halfMoneyPlayer));
+                city.depositCityBank(player, input);
                     }
             );
 
