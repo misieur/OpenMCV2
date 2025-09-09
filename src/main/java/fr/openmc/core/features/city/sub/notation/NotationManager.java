@@ -294,7 +294,10 @@ public class NotationManager {
      * @throws SQLException en cas d'erreur SQL
      */
     public static void calculateAllCityScore(String weekStr) throws SQLException {
-        List<CityNotation> notationsCopy = new ArrayList<>(notationPerWeek.get(weekStr));
+        List<CityNotation> notationsCopy = new ArrayList<>(
+                notationPerWeek.getOrDefault(weekStr, Collections.emptyList())
+        );
+
         for (CityNotation notation : notationsCopy) {
             City city = CityManager.getCity(notation.getCityUUID());
             notation.setNoteActivity(getActivityScore(city));
@@ -330,12 +333,14 @@ public class NotationManager {
      * @param weekStr la chaîne représentant la semaine
      */
     public static void giveReward(String weekStr) {
-        notationPerWeek.get(weekStr).forEach(notation -> {
+        List<CityNotation> notations = notationPerWeek.getOrDefault(weekStr, Collections.emptyList());
+
+        for (CityNotation notation : notations) {
             City city = CityManager.getCity(notation.getCityUUID());
             if (city != null) {
                 city.setBalance(city.getBalance() + calculateReward(notation));
             }
-        });
+        }
     }
 
     /**
