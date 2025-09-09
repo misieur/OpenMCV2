@@ -8,10 +8,13 @@ import fr.openmc.api.packetmenulib.PacketMenuLib;
 import fr.openmc.core.commands.admin.freeze.FreezeManager;
 import fr.openmc.core.commands.utils.SpawnManager;
 import fr.openmc.core.features.adminshop.AdminShopManager;
+import fr.openmc.core.features.animations.AnimationsManager;
 import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.sub.mascots.MascotsManager;
 import fr.openmc.core.features.city.sub.mayor.managers.MayorManager;
 import fr.openmc.core.features.city.sub.notation.NotationManager;
+import fr.openmc.core.features.city.sub.statistics.CityStatisticsManager;
+import fr.openmc.core.features.city.sub.war.WarManager;
 import fr.openmc.core.features.contest.managers.ContestManager;
 import fr.openmc.core.features.displays.TabList;
 import fr.openmc.core.features.displays.bossbar.BossbarManager;
@@ -98,7 +101,6 @@ public class OMCPlugin extends JavaPlugin {
         new CommandsManager();
         new SpawnManager();
         new UpdateManager();
-        new CityManager();
         new ListenersManager();
         new EconomyManager();
         new BankManager();
@@ -118,10 +120,12 @@ public class OMCPlugin extends JavaPlugin {
         new AdminShopManager();
         new BossbarManager();
         new PrivateMessageManager();
+        new AnimationsManager();
 
         new MotdUtils();
         new TranslationManager(new File(this.getDataFolder(), "translations"), "fr");
         new DynamicCooldownManager();
+        new MascotsManager();
 
         PlayerSettingsManager.loadAllPlayerSettings();
 
@@ -136,6 +140,7 @@ public class OMCPlugin extends JavaPlugin {
         new CustomUsableItemRegistry();
         new MilestonesManager();
         new QuestsManager();
+        new CityManager();
     }
 
     @Override
@@ -145,10 +150,16 @@ public class OMCPlugin extends JavaPlugin {
             HologramLoader.unloadAll();
         }
 
+        // - War
+        WarManager.saveWarHistories();
+
+        // - CityStatistics
+        CityStatisticsManager.saveCityStatistics();
+
         // - Settings
         PlayerSettingsManager.saveAllSettings();
 
-        // Notation des Villes
+        // - Notation des Villes
         NotationManager.saveNotations();
 
         // - Maires

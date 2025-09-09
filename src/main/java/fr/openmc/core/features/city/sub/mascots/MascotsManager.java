@@ -22,7 +22,6 @@ import fr.openmc.core.utils.messages.Prefix;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -42,17 +41,16 @@ import java.util.List;
 import java.util.UUID;
 
 public class MascotsManager {
-    public static final List<String> movingMascots = new ArrayList<>();
-    public static final HashMap<String, Mascot> mascotsByCityUUID = new HashMap<>();
+    public static final List<UUID> movingMascots = new ArrayList<>();
+    public static final HashMap<UUID, Mascot> mascotsByCityUUID = new HashMap<>();
     public static final HashMap<UUID, Mascot> mascotsByEntityUUID = new HashMap<>();
     public static final String PLACEHOLDER_MASCOT_NAME = "§l%s §c%.0f/%.0f❤";
     public static final String DEAD_MASCOT_NAME = "☠ §cMascotte Morte";
-    private static final NamespacedKey MAX_HEALTH_KEY = NamespacedKey.fromString("openmc:trans_rights_are_human_rights");
     public static NamespacedKey mascotsKey;
     private static Dao<Mascot, String> mascotsDao;
 
     public MascotsManager() {
-        //changement du spigot.yml pour permettre aux mascottes d'avoir 3000 cœurs
+        // changement du spigot.yml pour permettre aux mascottes d'avoir 3000 cœurs
         File spigotYML = new File("spigot.yml");
         YamlConfiguration spigotYMLConfig = YamlConfiguration.loadConfiguration(spigotYML);
         spigotYMLConfig.set("settings.attribute.maxHealth.max", 6000.0);
@@ -72,7 +70,8 @@ public class MascotsManager {
                 new MascotsDamageListener(),
                 new MascotsDeathListener(),
                 new MascotImmuneListener(),
-                new MascotsTargetListener()
+                new MascotsTargetListener(),
+                new MascotsRenameListener()
         );
         if (!OMCPlugin.isUnitTestVersion()) {
             new MascotsSoundListener();
@@ -114,7 +113,7 @@ public class MascotsManager {
         });
     }
 
-    public static void createMascot(City city, String cityUUID, String cityName, World player_world, Location mascot_spawn) {
+    public static void createMascot(City city, UUID cityUUID, String cityName, World player_world, Location mascot_spawn) {
         LivingEntity mob = (LivingEntity) player_world.spawnEntity(mascot_spawn, EntityType.ZOMBIE);
 
         Chunk chunk = mascot_spawn.getChunk();
@@ -122,7 +121,7 @@ public class MascotsManager {
         mob.setGlowing(true);
 
         PersistentDataContainer data = mob.getPersistentDataContainer();
-        data.set(mascotsKey, PersistentDataType.STRING, cityUUID);
+        data.set(mascotsKey, PersistentDataType.STRING, cityUUID.toString());
 
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> {
             try {
@@ -155,8 +154,8 @@ public class MascotsManager {
         MascotUtils.removeMascotOfCity(mascot);
     }
 
-    public static void upgradeMascots(String city_uuid) {
-        City city = CityManager.getCity(city_uuid);
+    public static void upgradeMascots(UUID cityUUID) {
+        City city = CityManager.getCity(cityUUID);
         if (city == null) return;
 
         Mascot mascot = city.getMascot();
@@ -181,9 +180,7 @@ public class MascotsManager {
         mascotsLevels = MascotsLevels.valueOf("level" + level);
 
         double maxHealth = mascotsLevels.getHealth();
-        mob.getAttribute(Attribute.MAX_HEALTH).removeModifier(MAX_HEALTH_KEY);
-        mob.getAttribute(Attribute.MAX_HEALTH).addModifier(new AttributeModifier(MAX_HEALTH_KEY, maxHealth, AttributeModifier.Operation.ADD_NUMBER));
-
+        mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
         if (mob.getHealth() == lastHealth) {
             mob.setHealth(maxHealth);
         }
@@ -199,6 +196,7 @@ public class MascotsManager {
         World world = Bukkit.getWorld("world");
         LivingEntity entityMascot = (LivingEntity) mascots.getEntity();
         Location mascotsLoc = entityMascot.getLocation();
+        UUID mascotUUID = entityMascot.getUniqueId();
 
         boolean glowing = entityMascot.isGlowing();
         long cooldown = 0;
@@ -224,12 +222,12 @@ public class MascotsManager {
 
         double baseHealth = entityMascot.getHealth();
         double maxHealth = entityMascot.getAttribute(Attribute.MAX_HEALTH).getValue();
-        String mascotsCustomUUID = entityMascot.getPersistentDataContainer().get(mascotsKey, PersistentDataType.STRING);
+        String cityUUID = entityMascot.getPersistentDataContainer().get(mascotsKey, PersistentDataType.STRING);
 
-        if (!DynamicCooldownManager.isReady(mascots.getMascotUUID().toString(), "mascots:move")) {
-            cooldown = DynamicCooldownManager.getRemaining(mascots.getMascotUUID().toString(), "mascots:move");
+        if (!DynamicCooldownManager.isReady(mascots.getMascotUUID(), "mascots:move")) {
+            cooldown = DynamicCooldownManager.getRemaining(mascots.getMascotUUID(), "mascots:move");
             hasCooldown = true;
-            DynamicCooldownManager.clear(entityMascot.getUniqueId().toString(), "mascots:move");
+            DynamicCooldownManager.clear(entityMascot.getUniqueId(), "mascots:move", false);
         }
 
         entityMascot.remove();
@@ -240,14 +238,16 @@ public class MascotsManager {
         newMascots.setGlowing(glowing);
 
         if (hasCooldown) {
-            DynamicCooldownManager.use(newMascots.getUniqueId().toString(), "mascots:move", cooldown);
+            DynamicCooldownManager.use(newMascots.getUniqueId(), "mascots:move", cooldown);
         }
 
         setMascotsData(newMascots, mascots.getCity().getName(), maxHealth, baseHealth);
         PersistentDataContainer newData = newMascots.getPersistentDataContainer();
+        MascotsManager.mascotsByEntityUUID.remove(mascotUUID);
+        MascotsManager.mascotsByEntityUUID.put(newMascots.getUniqueId(), mascots);
 
-        if (mascotsCustomUUID != null) {
-            newData.set(mascotsKey, PersistentDataType.STRING, mascotsCustomUUID);
+        if (cityUUID != null) {
+            newData.set(mascotsKey, PersistentDataType.STRING, cityUUID);
             mascots.setMascotUUID(newMascots.getUniqueId());
         }
 
@@ -257,7 +257,8 @@ public class MascotsManager {
 
     private static void setMascotsData(LivingEntity mob, String cityName, double maxHealth, double baseHealth) {
         mob.setAI(false);
-        mob.getAttribute(Attribute.MAX_HEALTH).addModifier(new AttributeModifier(MAX_HEALTH_KEY, maxHealth, AttributeModifier.Operation.ADD_NUMBER));
+
+        mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
         mob.setHealth(baseHealth);
         mob.setPersistent(true);
         mob.setRemoveWhenFarAway(false);

@@ -93,6 +93,7 @@ public class CityModifyMenu extends Menu {
             if (!CityManageConditions.canCityRename(cityCheck, player)) return;
 
             DialogInput.send(player, Component.text("Entrez le nom de la ville"), MAX_LENGTH_CITY, input -> {
+                if (input == null) return;
                 if (InputUtils.isInputCityName(input)) {
                     City playerCity = CityManager.getPlayerCity(player.getUniqueId());
 
@@ -142,11 +143,11 @@ public class CityModifyMenu extends Menu {
         Supplier<ItemBuilder> deleteItemSupplier = () -> {
                 List<Component> loreDelete;
                 if (hasPermissionOwner) {
-                    if (!DynamicCooldownManager.isReady(player.getUniqueId().toString(), "city:big")) {
+                    if (!DynamicCooldownManager.isReady(player.getUniqueId(), "city:big")) {
                         loreDelete = List.of(
                                 Component.text("§7Vous allez définitivement §csupprimer la ville!"),
                                 Component.empty(),
-                                Component.text("§7Vous devez attendre §c" + DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(player.getUniqueId().toString(), "city:big")) + " §7avant de pouvoir delete votre ville")
+                                Component.text("§7Vous devez attendre §c" + DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(player.getUniqueId(), "city:big")) + " §7avant de pouvoir delete votre ville")
                         );
                     } else {
                         loreDelete = List.of(
@@ -168,7 +169,7 @@ public class CityModifyMenu extends Menu {
                 });
             };
 
-            if (!DynamicCooldownManager.isReady(player.getUniqueId().toString(), "city:big")) {
+            if (!DynamicCooldownManager.isReady(player.getUniqueId(), "city:big")) {
                 MenuUtils.runDynamicItem(player, this, 15, deleteItemSupplier)
                         .runTaskTimer(OMCPlugin.getInstance(), 0L, 20L);
             } else {

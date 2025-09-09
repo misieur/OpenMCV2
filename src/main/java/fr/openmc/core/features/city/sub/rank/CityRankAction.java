@@ -1,14 +1,14 @@
-package fr.openmc.core.features.city.actions;
+package fr.openmc.core.features.city.sub.rank;
 
 import fr.openmc.api.input.DialogInput;
 import fr.openmc.api.menulib.default_menu.ConfirmMenu;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.CityPermission;
-import fr.openmc.core.features.city.conditions.CityRankCondition;
-import fr.openmc.core.features.city.menu.ranks.CityRankDetailsMenu;
-import fr.openmc.core.features.city.menu.ranks.CityRankMemberMenu;
-import fr.openmc.core.features.city.models.CityRank;
+import fr.openmc.core.features.city.models.DBCityRank;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
+import fr.openmc.core.features.city.sub.rank.menus.CityRankDetailsMenu;
+import fr.openmc.core.features.city.sub.rank.menus.CityRankMemberMenu;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
@@ -27,8 +27,11 @@ public class CityRankAction {
             return;
         }
 
-        DialogInput.send(player, Component.text("Entrez le nom de votre grade"), MAX_LENGTH_RANK_NAME, input ->
-                CityRankAction.afterCreateRank(player, input)
+        DialogInput.send(player, Component.text("Entrez le nom de votre grade"), MAX_LENGTH_RANK_NAME, input -> {
+                    if (input == null) return;
+
+                    CityRankAction.afterCreateRank(player, input);
+                }
         );
     }
 
@@ -53,17 +56,19 @@ public class CityRankAction {
         }
 
         DialogInput.send(player, Component.text("Entrez le nouveau nom de votre grade"), MAX_LENGTH_RANK_NAME, input -> {
+            if (input == null) return;
+
             if (!CityRankCondition.canRenameRank(city, player, oldName)) {
                 return;
             }
 
-            CityRank rank = city.getRankByName(oldName);
+            DBCityRank rank = city.getRankByName(oldName);
             if (rank == null) {
                 MessagesManager.sendMessage(player, MessagesManager.Message.CITY_RANKS_NOT_EXIST.getMessage(), Prefix.CITY, MessageType.ERROR, false);
                 return;
             }
 
-            city.updateRank(rank, new CityRank(rank.getRankUUID(), city.getUUID(), input, rank.getPriority(), rank.getPermissionsSet(), rank.getIcon()));
+            city.updateRank(rank, new DBCityRank(rank.getRankUUID(), city.getUniqueId(), input, rank.getPriority(), rank.getPermissionsSet(), rank.getIcon()));
             MessagesManager.sendMessage(player, Component.text("Le nom du grade a été mis à jour : " + oldName + " → " + input), Prefix.CITY, MessageType.SUCCESS, false);
         });
     }
@@ -79,7 +84,7 @@ public class CityRankAction {
             return;
         }
 
-        CityRank rank = city.getRankByName(rankName);
+        DBCityRank rank = city.getRankByName(rankName);
         if (rank == null) {
             MessagesManager.sendMessage(player, MessagesManager.Message.CITY_RANKS_NOT_EXIST.getMessage(), Prefix.CITY, MessageType.ERROR, false);
             return;
@@ -112,11 +117,17 @@ public class CityRankAction {
             MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_NO_CITY.getMessage(), Prefix.CITY, MessageType.ERROR, false);
             return;
         }
+
+        if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.RANK)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.RANK) + "!"), Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
         if (!city.hasPermission(player.getUniqueId(), CityPermission.ASSIGN_RANKS)) {
             MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_NO_ACCESS_PERMS.getMessage(), Prefix.CITY, MessageType.ERROR, false);
             return;
         }
-        CityRank rank = city.getRankByName(rankName);
+        DBCityRank rank = city.getRankByName(rankName);
         if (member == null && rank == null) {
             new CityRankMemberMenu(player, city).open();
             return;

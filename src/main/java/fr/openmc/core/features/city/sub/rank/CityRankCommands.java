@@ -1,15 +1,16 @@
-package fr.openmc.core.features.city.commands;
+package fr.openmc.core.features.city.sub.rank;
 
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.CityPermission;
-import fr.openmc.core.features.city.actions.CityRankAction;
-import fr.openmc.core.features.city.menu.ranks.CityRankDetailsMenu;
-import fr.openmc.core.features.city.menu.ranks.CityRanksMenu;
-import fr.openmc.core.features.city.models.CityRank;
+import fr.openmc.core.features.city.models.DBCityRank;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
+import fr.openmc.core.features.city.sub.rank.menus.CityRankDetailsMenu;
+import fr.openmc.core.features.city.sub.rank.menus.CityRanksMenu;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
+import net.kyori.adventure.text.Component;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import revxrsal.commands.annotation.*;
@@ -25,6 +26,11 @@ public class CityRankCommands {
 
 		if (city == null) {
 			MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_NO_CITY.getMessage(), Prefix.CITY, MessageType.ERROR, false);
+			return;
+		}
+
+		if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.RANK)) {
+			MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.RANK) + "!"), Prefix.CITY, MessageType.ERROR, false);
 			return;
 		}
 
@@ -50,7 +56,7 @@ public class CityRankCommands {
 			MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_NO_ACCESS_PERMS.getMessage(), Prefix.CITY, MessageType.ERROR, false);
 			return;
 		}
-		CityRank rank = city.getRankByName(rankName);
+		DBCityRank rank = city.getRankByName(rankName);
 		if (rank == null) {
 			MessagesManager.sendMessage(player, MessagesManager.Message.CITY_RANKS_NOT_EXIST.getMessage(), Prefix.CITY, MessageType.ERROR, false);
 			return;
@@ -65,7 +71,7 @@ public class CityRankCommands {
 	 * @param rank       The rank to swap the permission for.
 	 * @param permission The permission to swap.
 	 */
-	public static void swapPermission(Player player, CityRank rank, CityPermission permission) {
+	public static void swapPermission(Player player, DBCityRank rank, CityPermission permission) {
 		City city = CityManager.getPlayerCity(player.getUniqueId());
 		if (city == null) {
 			MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_NO_CITY.getMessage(), Prefix.CITY, MessageType.ERROR, false);

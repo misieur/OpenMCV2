@@ -1,10 +1,11 @@
 package fr.openmc.core.features.city.sub.war.commands;
 
 import fr.openmc.api.cooldown.DynamicCooldownManager;
-import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
+import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.CityType;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.features.city.sub.war.WarManager;
 import fr.openmc.core.features.city.sub.war.WarPendingDefense;
 import fr.openmc.core.features.city.sub.war.actions.WarActions;
@@ -36,16 +37,21 @@ public class WarCommand {
             return;
         }
 
+        if (!FeaturesRewards.hasUnlockFeature(playerCity, FeaturesRewards.Feature.WAR)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.WAR) + "!"), Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
         if (!playerCity.getType().equals(CityType.WAR)) {
             MessagesManager.sendMessage(player,
-                    Component.text("Votre ville n'est pas dans un statut de §cgueere§f! Changez la type de votre ville avec §c/city type §fou depuis le §cMenu Princiapl des Villes"),
+                    Component.text("Votre ville n'est pas dans un statut de §cguerre §f! Changez la type de votre ville avec §c/city type §fou depuis le §cMenu Principal des Villes"),
                     Prefix.CITY, MessageType.ERROR, false);
             return;
         }
 
         if (playerCity.isImmune()) {
             MessagesManager.sendMessage(player,
-                    Component.text("Votre ville est actuellement en période d'immunité, vous ne pouvez pas lancer de guerre pour le moment. \nTemps restant : " + DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(playerCity.getUUID(), "city:immunity"))),
+                    Component.text("Votre ville est actuellement en période d'immunité, vous ne pouvez pas lancer de guerre pour le moment. \nTemps restant : " + DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(playerCity.getUniqueId(), "city:immunity"))),
                     Prefix.CITY, MessageType.ERROR, false);
             return;
         }
@@ -74,6 +80,11 @@ public class WarCommand {
         City city = CityManager.getPlayerCity(player.getUniqueId());
         if (city == null) {
             player.sendMessage("§cVous n'avez pas de ville.");
+            return;
+        }
+
+        if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.WAR)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.WAR) + "!"), Prefix.CITY, MessageType.ERROR, false);
             return;
         }
 

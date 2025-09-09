@@ -5,19 +5,20 @@ import de.oliver.fancynpcs.api.Npc;
 import de.oliver.fancynpcs.api.NpcData;
 import de.oliver.fancynpcs.api.events.NpcInteractEvent;
 import de.oliver.fancynpcs.api.utils.NpcEquipmentSlot;
+import fr.openmc.api.hooks.FancyNpcsHook;
 import fr.openmc.api.input.location.ItemInteraction;
 import fr.openmc.core.OMCPlugin;
-import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
+import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.sub.mayor.ElectionType;
 import fr.openmc.core.features.city.sub.mayor.menu.npc.MayorNpcMenu;
 import fr.openmc.core.features.city.sub.mayor.menu.npc.OwnerNpcMenu;
 import fr.openmc.core.features.city.sub.mayor.npcs.MayorNPC;
 import fr.openmc.core.features.city.sub.mayor.npcs.OwnerNPC;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.items.CustomItemRegistry;
 import fr.openmc.core.utils.CacheOfflinePlayer;
-import fr.openmc.api.hooks.FancyNpcsHook;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
@@ -37,15 +38,15 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 public class NPCManager implements Listener {
-    private static final HashMap<String, OwnerNPC> ownerNpcMap = new HashMap<>();
-    private static final HashMap<String, MayorNPC> mayorNpcMap = new HashMap<>();
+    private static final HashMap<UUID, OwnerNPC> ownerNpcMap = new HashMap<>();
+    private static final HashMap<UUID, MayorNPC> mayorNpcMap = new HashMap<>();
 
     public NPCManager() {
         // fetch les npcs apres 30 secondes le temps que fancy npc s'initialise.
         Bukkit.getScheduler().runTaskLater(OMCPlugin.getInstance(), () -> {
             FancyNpcsPlugin.get().getNpcManager().getAllNpcs().forEach(npc -> {
                 if (npc.getData().getName().startsWith("owner-")) {
-                    String cityUUID = npc.getData().getName().replace("owner-", "");
+                    UUID cityUUID = UUID.fromString(npc.getData().getName().replace("owner-", ""));
                     if (CityManager.getCity(cityUUID) != null) {
                         ownerNpcMap.put(cityUUID, new OwnerNPC(npc, cityUUID, npc.getData().getLocation()));
                     } else {
@@ -53,7 +54,7 @@ public class NPCManager implements Listener {
                         npc.removeForAll();
                     }
                 } else if (npc.getData().getName().startsWith("mayor-")) {
-                    String cityUUID = npc.getData().getName().replace("mayor-", "");
+                    UUID cityUUID = UUID.fromString(npc.getData().getName().replace("mayor-", ""));
                     if (CityManager.getCity(cityUUID) != null) {
                         mayorNpcMap.put(cityUUID, new MayorNPC(npc, cityUUID, npc.getData().getLocation()));
                     } else {
@@ -65,7 +66,7 @@ public class NPCManager implements Listener {
         }, 20L * 30);
     }
 
-    public static void createNPCS(String cityUUID, Location locationMayor, Location locationOwner, UUID creatorUUID) {
+    public static void createNPCS(UUID cityUUID, Location locationMayor, Location locationOwner, UUID creatorUUID) {
         if (!FancyNpcsHook.hasFancyNpc()) return;
 
 
@@ -73,8 +74,8 @@ public class NPCManager implements Listener {
         if (city == null) return;
 
         NpcData dataMayor = new NpcData("mayor-" + cityUUID, creatorUUID, locationMayor);
-        if (city.getMayor().getUUID() != null && city.getElectionType() == ElectionType.ELECTION) {
-            String mayorName = CacheOfflinePlayer.getOfflinePlayer(city.getMayor().getUUID()).getName();
+        if (city.getMayor().getMayorUUID() != null && city.getElectionType() == ElectionType.ELECTION) {
+            String mayorName = CacheOfflinePlayer.getOfflinePlayer(city.getMayor().getMayorUUID()).getName();
             dataMayor.setSkin(mayorName);
             dataMayor.setDisplayName("§6Maire " + mayorName);
 
@@ -109,7 +110,7 @@ public class NPCManager implements Listener {
         npcOwner.spawnForAll();
     }
 
-    public static void removeNPCS(String cityUUID) {
+    public static void removeNPCS(UUID cityUUID) {
         if (!FancyNpcsHook.hasFancyNpc()) return;
         if (!ownerNpcMap.containsKey(cityUUID) || !mayorNpcMap.containsKey(cityUUID)) return;
 
@@ -123,7 +124,7 @@ public class NPCManager implements Listener {
         mayorNpc.removeForAll();
     }
 
-    public static void updateNPCS(String cityUUID) {
+    public static void updateNPCS(UUID cityUUID) {
         if (!FancyNpcsHook.hasFancyNpc()) return;
 
         OwnerNPC ownerNPC = ownerNpcMap.get(cityUUID);
@@ -141,9 +142,9 @@ public class NPCManager implements Listener {
     public static void updateAllNPCS() {
         if (!FancyNpcsHook.hasFancyNpc()) return;
 
-        Set<String> cityUUIDs = new HashSet<>(ownerNpcMap.keySet()); // Copie
+        Set<UUID> cityUUIDs = new HashSet<>(ownerNpcMap.keySet()); // Copie
 
-        for (String cityUUID : cityUUIDs) {
+        for (UUID cityUUID : cityUUIDs) {
             OwnerNPC ownerNPC = ownerNpcMap.get(cityUUID);
             MayorNPC mayorNPC = mayorNpcMap.get(cityUUID);
 
@@ -157,17 +158,17 @@ public class NPCManager implements Listener {
         }
     }
 
-    public static void moveNPC(String type, Location location, String city_uuid) {
+    public static void moveNPC(String type, Location location, UUID cityUUID) {
         if (!FancyNpcsHook.hasFancyNpc()) return;
 
         if (type.equalsIgnoreCase("owner")) {
-            OwnerNPC ownerNPC = ownerNpcMap.get(city_uuid);
+            OwnerNPC ownerNPC = ownerNpcMap.get(cityUUID);
             if (ownerNPC != null) {
                 ownerNPC.getNpc().getData().setLocation(location);
                 ownerNPC.setLocation(location);
             }
         } else if (type.equalsIgnoreCase("mayor")) {
-            MayorNPC mayorNPC = mayorNpcMap.get(city_uuid);
+            MayorNPC mayorNPC = mayorNpcMap.get(cityUUID);
             if (mayorNPC != null) {
                 mayorNPC.getNpc().getData().setLocation(location);
                 mayorNPC.setLocation(location);
@@ -175,7 +176,7 @@ public class NPCManager implements Listener {
         }
     }
 
-    public static boolean hasNPCS(String cityUUID) {
+    public static boolean hasNPCS(UUID cityUUID) {
         if (!FancyNpcsHook.hasFancyNpc()) return false;
 
         return ownerNpcMap.containsKey(cityUUID) && mayorNpcMap.containsKey(cityUUID);
@@ -190,11 +191,16 @@ public class NPCManager implements Listener {
         Npc npc = event.getNpc();
 
         if (npc.getData().getName().startsWith("mayor-")) {
-            String cityUUID = npc.getData().getName().replace("mayor-", "");
+            UUID cityUUID = UUID.fromString(npc.getData().getName().replace("mayor-", ""));
             City city = CityManager.getCity(cityUUID);
             if (city == null) {
                 MessagesManager.sendMessage(player, Component.text("§8§oCet objet n'est pas dans une ville"), Prefix.MAYOR, MessageType.ERROR, false);
                 removeNPCS(cityUUID);
+                return;
+            }
+
+            if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.MAYOR)) {
+                MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.MAYOR) + "!"), Prefix.CITY, MessageType.ERROR, false);
                 return;
             }
 
@@ -249,13 +255,13 @@ public class NPCManager implements Listener {
                                             return false;
                                         }
 
-                                        if (!cityByChunk.getUUID().equals(playerCity.getUUID())) {
+                                        if (!cityByChunk.getUniqueId().equals(playerCity.getUniqueId())) {
                                             MessagesManager.sendMessage(player, Component.text("§cImpossible de mettre le NPC en dehors de votre ville"), Prefix.CITY, MessageType.ERROR, false);
                                             return false;
                                         }
 
-                                        NPCManager.moveNPC("mayor", locationClick, city.getUUID());
-                                        NPCManager.updateNPCS(city.getUUID());
+                                        NPCManager.moveNPC("mayor", locationClick, city.getUniqueId());
+                                        NPCManager.updateNPCS(city.getUniqueId());
                                         return true;
                                     },
                                     null
@@ -276,7 +282,7 @@ public class NPCManager implements Listener {
 
             new MayorNpcMenu(player, city).open();
         } else if (npc.getData().getName().startsWith("owner-")) {
-            String cityUUID = npc.getData().getName().replace("owner-", "");
+            UUID cityUUID = UUID.fromString(npc.getData().getName().replace("owner-", ""));
             City city = CityManager.getCity(cityUUID);
             if (city == null) {
                 MessagesManager.sendMessage(player, Component.text("§8§oCet objet n'est pas dans une ville"), Prefix.MAYOR, MessageType.ERROR, false);
@@ -284,7 +290,14 @@ public class NPCManager implements Listener {
                 return;
             }
 
-            if (!city.hasChunk(event.getNpc().getData().getLocation().getChunk())) {
+            if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.MAYOR)) {
+                MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.MAYOR) + "!"), Prefix.CITY, MessageType.ERROR, false);
+                return;
+            }
+
+            Chunk npcChuck = event.getNpc().getData().getLocation().getChunk();
+
+            if (!city.hasChunk(npcChuck.getX(), npcChuck.getZ())) {
                 MessagesManager.sendMessage(player, Component.text("§8§oCet objet n'est pas dans une ville"), Prefix.MAYOR, MessageType.ERROR, false);
                 removeNPCS(cityUUID);
                 return;
@@ -328,13 +341,13 @@ public class NPCManager implements Listener {
                                             return false;
                                         }
 
-                                        if (!cityByChunk.getUUID().equals(playerCity.getUUID())) {
+                                        if (!cityByChunk.getUniqueId().equals(playerCity.getUniqueId())) {
                                             MessagesManager.sendMessage(player, Component.text("§cImpossible de mettre le NPC en dehors de votre ville"), Prefix.CITY, MessageType.ERROR, false);
                                             return false;
                                         }
 
-                                        NPCManager.moveNPC("owner", locationClick, city.getUUID());
-                                        NPCManager.updateNPCS(city.getUUID());
+                                        NPCManager.moveNPC("owner", locationClick, city.getUniqueId());
+                                        NPCManager.updateNPCS(city.getUniqueId());
                                         return true;
                                     },
                                     null

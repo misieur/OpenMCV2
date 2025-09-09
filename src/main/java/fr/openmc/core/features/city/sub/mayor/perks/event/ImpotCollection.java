@@ -60,7 +60,7 @@ public class ImpotCollection implements Listener {
 
             zombie.setShouldBurnInDay(false);
 
-            zombie.setMetadata("mayor:zombie", new FixedMetadataValue(OMCPlugin.getInstance(), city.getMayor().getUUID()));
+            zombie.setMetadata("mayor:zombie", new FixedMetadataValue(OMCPlugin.getInstance(), city.getMayor().getMayorUUID()));
         }
     }
 
@@ -86,7 +86,7 @@ public class ImpotCollection implements Listener {
                 return;
             }
 
-            BankManager.withdrawBankBalance(victim.getUniqueId(), amount);
+            BankManager.withdraw(victim.getUniqueId(), amount);
         } else {
             EconomyManager.withdrawBalance(victim.getUniqueId(), amount);
         }

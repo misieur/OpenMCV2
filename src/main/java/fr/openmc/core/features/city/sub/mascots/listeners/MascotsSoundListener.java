@@ -16,7 +16,10 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 public class MascotsSoundListener {
 
@@ -58,6 +61,10 @@ public class MascotsSoundListener {
                         .toList();
 
                 EntityType soundEntity = EnumUtils.match(splitedSound[1].toUpperCase(Locale.ROOT), EntityType.class);
+
+                if (soundEntity == null) {
+                    return;
+                }
 
                 for (Mascot mascot : mascotsNear) {
                     EntityType entityType = mascot.getEntity().getType();

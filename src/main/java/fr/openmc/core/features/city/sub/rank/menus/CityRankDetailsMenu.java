@@ -1,12 +1,13 @@
-package fr.openmc.core.features.city.menu.ranks;
+package fr.openmc.core.features.city.sub.rank.menus;
 
 import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityPermission;
-import fr.openmc.core.features.city.actions.CityRankAction;
-import fr.openmc.core.features.city.models.CityRank;
+import fr.openmc.core.features.city.models.DBCityRank;
+import fr.openmc.core.features.city.sub.milestone.rewards.RankLimitRewards;
+import fr.openmc.core.features.city.sub.rank.CityRankAction;
 import fr.openmc.core.items.CustomItemRegistry;
 import fr.openmc.core.utils.ItemUtils;
 import fr.openmc.core.utils.messages.MessageType;
@@ -25,17 +26,17 @@ import java.util.*;
 
 public class CityRankDetailsMenu extends Menu {
 	
-	private final CityRank rank;
+	private final DBCityRank rank;
 	private final City city;
 	
-	public CityRankDetailsMenu(Player owner, City city, CityRank rank) {
+	public CityRankDetailsMenu(Player owner, City city, DBCityRank rank) {
 		super(owner);
 		this.rank = rank;
 		this.city = city;
 	}
 	
 	public CityRankDetailsMenu(Player owner, City city, String rankName) {
-		this(owner, city, new CityRank(UUID.randomUUID(), city.getUUID(), rankName, 0, new HashSet<>(), Material.GOLD_BLOCK));
+		this(owner, city, new DBCityRank(UUID.randomUUID(), city.getUniqueId(), rankName, 0, new HashSet<>(), Material.GOLD_BLOCK));
 	}
 	
 	@Override
@@ -174,9 +175,9 @@ public class CityRankDetailsMenu extends Menu {
 			if (!canManageRanks) return;
 
 			if (inventoryClickEvent.isLeftClick()) {
-				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() + 1) % City.MAX_RANKS)).open();
+				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() + 1) % RankLimitRewards.getRankLimit(city.getLevel()))).open();
 			} else if (inventoryClickEvent.isRightClick()) {
-				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() - 1 + City.MAX_RANKS) % City.MAX_RANKS)).open();
+				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() - 1 + RankLimitRewards.getRankLimit(city.getLevel())) % RankLimitRewards.getRankLimit(city.getLevel()))).open();
 			}
 		}));
 

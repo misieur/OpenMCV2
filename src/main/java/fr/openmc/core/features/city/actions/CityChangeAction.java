@@ -9,6 +9,7 @@ import fr.openmc.core.features.city.conditions.CityTypeConditions;
 import fr.openmc.core.features.city.sub.mascots.MascotsManager;
 import fr.openmc.core.features.city.sub.mascots.models.Mascot;
 import fr.openmc.core.features.city.sub.mascots.models.MascotsLevels;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.utils.DateUtils;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
@@ -31,6 +32,12 @@ public class CityChangeAction {
         City city = CityManager.getPlayerCity(player.getUniqueId());
 
         if (!CityTypeConditions.canCityChangeType(city, player)) return;
+
+        if (typeChange.equals(CityType.WAR) && !FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.TYPE_WAR)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.TYPE_WAR) + "!"), Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
         String cityTypeActuel;
         String cityTypeAfter;
         cityTypeActuel = city.getType() == CityType.WAR ? "§cen guerre§7" : "§aen paix§7";
@@ -83,13 +90,13 @@ public class CityChangeAction {
             return;
         }
 
-        if (!DynamicCooldownManager.isReady(city.getUUID(), "city:type")) {
-            MessagesManager.sendMessage(sender, Component.text("Vous devez attendre " + DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(city.getUUID(), "city:type")) + " secondes pour changer de type de ville"), Prefix.CITY, MessageType.ERROR, false);
+        if (!DynamicCooldownManager.isReady(city.getUniqueId(), "city:type")) {
+            MessagesManager.sendMessage(sender, Component.text("Vous devez attendre " + DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(city.getUniqueId(), "city:type")) + " secondes pour changer de type de ville"), Prefix.CITY, MessageType.ERROR, false);
             return;
         }
 
         city.changeType();
-        DynamicCooldownManager.use(city.getUUID(), "city:type", COOLDOWN_CHANGE_TYPE);
+        DynamicCooldownManager.use(city.getUniqueId(), "city:type", COOLDOWN_CHANGE_TYPE);
 
         LivingEntity mob = (LivingEntity) mascot.getEntity();
         MascotsLevels mascotsLevels = MascotsLevels.valueOf("level" + mascot.getLevel());
@@ -120,10 +127,8 @@ public class CityChangeAction {
             exception.printStackTrace();
         }
 
-        String cityTypeActuel;
-        String cityTypeAfter;
-        cityTypeActuel = city.getType() == CityType.WAR ? "§aen paix§7" : "§cen guerre§7";
-        cityTypeAfter = city.getType() == CityType.WAR ? "§cen guerre§7" : "§aen paix§7";
+        String cityTypeActuel = city.getType() == CityType.WAR ? "§aen paix§7" : "§cen guerre§7";
+        String cityTypeAfter = city.getType() == CityType.WAR ? "§cen guerre§7" : "§aen paix§7";
 
         MessagesManager.sendMessage(sender, Component.text("Vous avez changé le type de votre ville de " + cityTypeActuel + " à " + cityTypeAfter), Prefix.CITY, MessageType.SUCCESS, false);
     }
