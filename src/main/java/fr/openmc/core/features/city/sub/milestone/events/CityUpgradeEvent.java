@@ -1,23 +1,20 @@
-package fr.openmc.core.features.quests.events;
+package fr.openmc.core.features.city.sub.milestone.events;
 
-import fr.openmc.core.features.quests.objects.Quest;
+import fr.openmc.core.features.city.City;
 import lombok.Getter;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 @Getter
-public class QuestCompleteEvent extends Event {
+public class CityUpgradeEvent extends Event {
 
-    private final Player player;
-    private final Quest quest;
+    private final City city;
 
     private static final HandlerList HANDLERS = new HandlerList();
 
-    public QuestCompleteEvent(Player player, Quest quest) {
-        this.player = player;
-        this.quest = quest;
+    public CityUpgradeEvent(City city) {
+        this.city = city;
     }
 
     public static HandlerList getHandlerList() {

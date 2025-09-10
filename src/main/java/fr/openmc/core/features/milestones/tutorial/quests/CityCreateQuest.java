@@ -44,7 +44,7 @@ public class CityCreateQuest extends Quest implements Listener {
                 1,
                 new QuestMoneyReward(500),
                 new QuestTextReward(
-                        "Bien Joué ! Vous avez fini l'§6Étape " + (step.ordinal() + 1) + " §f! Cette version d'OpenMC est centrée autour des villes. Vous y trouverez une §eMilestone spéciale pour les Villes §fqui vous guidera dans cette aventure singulière ! Mais avant cela, il faudrait peut être mettre un §2Home §f?",
+                        "Bien Joué ! Vous avez fini l'§6Étape " + (step.ordinal() + 1) + " §f! Cette version d'OpenMC est centrée autour des villes. Vous y trouverez une §eMilestone spéciale pour les Villes §f (/city milestone) qui vous guidera dans cette aventure singulière ! Et si vous passiez votre ville au §3Niveau 2 §f?",
                         Prefix.MILLESTONE,
                         MessageType.SUCCESS
                 ),
@@ -69,6 +69,11 @@ public class CityCreateQuest extends Quest implements Listener {
 
         if (MilestonesManager.getPlayerStep(type, player.getUniqueId()) != step.ordinal()) return;
 
-        if (player.isOnline()) this.incrementProgress(player.getUniqueId());
+        if (player.isOnline()) {
+            this.incrementProgress(player.getUniqueId());
+            if (event.getCity().getLevel() >= 2) {
+                TutorialStep.CITY_LEVEL_2.getQuest().incrementProgress(player.getUniqueId());
+            }
+        }
     }
 }

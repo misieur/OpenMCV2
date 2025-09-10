@@ -2,6 +2,7 @@ package fr.openmc.core.features.milestones.tutorial.quests;
 
 import dev.lone.itemsadder.api.CustomBlock;
 import fr.openmc.api.hooks.ItemsAdderHook;
+import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.milestones.MilestoneType;
 import fr.openmc.core.features.milestones.MilestonesManager;
 import fr.openmc.core.features.milestones.tutorial.TutorialBossBar;
@@ -47,7 +48,13 @@ public class BreakAyweniteQuest extends Quest implements Listener {
                 new QuestMoneyReward(3500),
                 new QuestTextReward("Bien Joué! Vous avez fini l'§6Étape " + (step.ordinal() + 1) + " §f! Comme dit précédemment l'§dAywenite §fest un minerai, précieux pour les features. D'ailleurs vous pouvez l'utiliser pour faire votre ville ! ", Prefix.MILLESTONE, MessageType.SUCCESS),
                 new QuestMethodsReward(
-                        player -> TutorialUtils.completeStep(type, player, step)
+                        player -> {
+                            TutorialUtils.completeStep(type, player, step);
+
+                            if (CityManager.getPlayerCity(player.getUniqueId()) != null) {
+                                TutorialStep.CITY_CREATE.getQuest().incrementProgress(player.getUniqueId());
+                            }
+                        }
                 )
         ));
     }

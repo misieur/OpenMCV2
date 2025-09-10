@@ -57,8 +57,6 @@ public class OpenContestMenuQuest extends Quest implements Listener {
                             aywenite.setAmount(30);
                             items.add(aywenite);
 
-                            //TODO: ajouter les tickets de la V1
-
                             ItemStack[] itemsArray = items.toArray(new ItemStack[0]);
 
                             MailboxManager.sendItems(player, player, itemsArray);

@@ -1,10 +1,11 @@
 package fr.openmc.core.features.milestones.tutorial.quests;
 
+import fr.openmc.core.features.city.City;
+import fr.openmc.core.features.city.sub.milestone.events.CityUpgradeEvent;
 import fr.openmc.core.features.milestones.MilestoneType;
 import fr.openmc.core.features.milestones.MilestonesManager;
 import fr.openmc.core.features.milestones.tutorial.TutorialStep;
 import fr.openmc.core.features.milestones.tutorial.utils.TutorialUtils;
-import fr.openmc.core.features.quests.events.QuestCompleteEvent;
 import fr.openmc.core.features.quests.objects.Quest;
 import fr.openmc.core.features.quests.objects.QuestTier;
 import fr.openmc.core.features.quests.rewards.QuestMethodsReward;
@@ -13,35 +14,36 @@ import fr.openmc.core.features.quests.rewards.QuestTextReward;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.Prefix;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 import java.util.List;
+import java.util.UUID;
 
-public class FinishQuestQuest extends Quest implements Listener {
+public class CityLevel2Quest extends Quest implements Listener {
 
     private final TutorialStep step;
     private final MilestoneType type;
 
-    public FinishQuestQuest() {
+    public CityLevel2Quest() {
         super(
-                "Accomplir une Quête",
+                "Avoir une Ville niveau 2",
                 List.of(
-                        "§fAccomplissez une quête de votre choix",
-                        "§8§oCela va pouvoir vous donner de l'argent ou certaines ressources !"
+                        "§fFaites §d/city milestone §fpour en savoir plus comment",
+                        "§faméliorer votre Ville !"
                 ),
-                Material.DIAMOND
+                Material.NETHER_STAR
         );
 
-        this.step = TutorialStep.FINISH_QUEST;
+        this.step = TutorialStep.CITY_LEVEL_2;
         this.type = MilestoneType.TUTORIAL;
 
         this.addTier(new QuestTier(
                 1,
                 new QuestMoneyReward(500),
                 new QuestTextReward(
-                        "Bien Joué ! Vous avez fini l'§6Étape " + (step.ordinal() + 1) + " §f! Et voici une §9récompense §f! Pratique non? Allons découvrir une autre méthode de production d'argent et de consomation ! Allez dans l'§cAdmin Shop§f, un endroit où plusieurs items sont achetable à des prix variants en fonction l'§coffre et la demande §f!",
+                        "Bien Joué ! Vous avez fini l'§6Étape " + (step.ordinal() + 1) + " §f! Vous êtes bien parti pour découvrir toutes les features qu'ils se cachent dans les Villes ! Mais avant cela, je voudrais que vous posiez un §2Home §f?",
                         Prefix.MILLESTONE,
                         MessageType.SUCCESS
                 ),
@@ -51,15 +53,14 @@ public class FinishQuestQuest extends Quest implements Listener {
         ));
     }
 
-    @EventHandler
-    public void onQuestComplete(QuestCompleteEvent event) {
-        Player player = event.getPlayer();
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onCityUpgrade(CityUpgradeEvent event) {
+        City city = event.getCity();
 
-        if (event.getQuest().getClass() == OpenQuestMenuQuest.class) return;
+        for (UUID memberUUID : city.getMembers()) {
+            if (MilestonesManager.getPlayerStep(type, memberUUID) != step.ordinal()) return;
 
-        if (MilestonesManager.getPlayerStep(type, player) != step.ordinal()) return;
-
-        this.incrementProgress(player.getUniqueId());
+            this.incrementProgress(memberUUID);
+        }
     }
-
 }

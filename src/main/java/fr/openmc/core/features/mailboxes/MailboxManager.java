@@ -57,6 +57,7 @@ public class MailboxManager {
                     Timestamp.valueOf(LocalDateTime.now()), false);
             if (letterDao.create(letter) == 0)
                 return false;
+
             int id = letter.getId();
 
             Player receiverPlayer = receiver.getPlayer();
@@ -64,9 +65,11 @@ public class MailboxManager {
                 if (MailboxMenuManager.playerInventories.get(receiverPlayer) instanceof PlayerMailbox receiverMailbox) {
                     LetterHead letterHead = new LetterHead(sender, numItems, id, sent);
                     receiverMailbox.addLetter(letterHead);
-                } else
+                } else {
                     sendNotification(receiverPlayer, numItems, id, sender.getName());
+                }
             }
+
             sendSuccessSendingMessage(sender, receiverName, numItems);
             return true;
         } catch (Exception ex) {
@@ -187,8 +190,10 @@ public class MailboxManager {
         }
     }
 
-    // todo
     public static boolean canSend(Player sender, OfflinePlayer receiver) {
+        if (sender.getUniqueId().equals(receiver.getUniqueId()))
+            return true
+                    ;
         PlayerSettings settings = PlayerSettingsManager.getPlayerSettings(receiver.getUniqueId());
         return settings.canPerformAction(SettingType.MAILBOX_RECEIVE_POLICY, sender.getUniqueId());
     }
