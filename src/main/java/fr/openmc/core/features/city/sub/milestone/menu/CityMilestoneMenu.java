@@ -180,7 +180,7 @@ public class CityMilestoneMenu extends Menu {
             lore.add(Component.text("§a§lDÉBLOQUÉ"));
         } else {
             lore.add(Component.empty());
-            if (DynamicCooldownManager.getRemaining(city.getUniqueId(), "city:upgrade-level") != 0) {
+            if (DynamicCooldownManager.getRemaining(city.getUniqueId(), "city:upgrade-level") != 0 && city.getLevel() + 1 == level.ordinal() + 1) {
                 lore.add(Component.text("§fIl reste §3" +
                         DateUtils.convertMillisToTime(DynamicCooldownManager.getRemaining(city.getUniqueId(), "city:upgrade-level")) +
                         " §fde débloquage"));
