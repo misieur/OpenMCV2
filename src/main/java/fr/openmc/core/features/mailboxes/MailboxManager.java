@@ -44,22 +44,32 @@ public class MailboxManager {
         letterDao = DaoManager.createDao(connectionSource, Letter.class);
     }
 
+    private static final int MAX_STACKS_PER_LETTER = 27;
+
     public static boolean sendItems(Player sender, OfflinePlayer receiver, ItemStack[] items) {
-        if (!canSend(sender, receiver))
-            return false;
+        if (!canSend(sender, receiver)) return false;
+
+        List<ItemStack> allItems = Arrays.asList(items);
+        for (int i = 0; i < allItems.size(); i += MAX_STACKS_PER_LETTER) {
+            List<ItemStack> subList = allItems.subList(i, Math.min(i + MAX_STACKS_PER_LETTER, allItems.size()));
+            if (!sendLetter(sender, receiver, subList.toArray(new ItemStack[0]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean sendLetter(Player sender, OfflinePlayer receiver, ItemStack[] items) {
         String receiverName = receiver.getName();
         int numItems = Arrays.stream(items).mapToInt(ItemStack::getAmount).sum();
         LocalDateTime sent = LocalDateTime.now();
 
         try {
             byte[] itemsBytes = BukkitSerializer.serializeItemStacks(items);
-            Letter letter = new Letter(sender.getUniqueId(), receiver.getUniqueId(), itemsBytes, numItems,
-                    Timestamp.valueOf(LocalDateTime.now()), false);
-            if (letterDao.create(letter) == 0)
-                return false;
+            Letter letter = new Letter(sender.getUniqueId(), receiver.getUniqueId(), itemsBytes, numItems, Timestamp.valueOf(sent), false);
+            if (letterDao.create(letter) == 0) return false;
 
             int id = letter.getId();
-
             Player receiverPlayer = receiver.getPlayer();
             if (receiverPlayer != null) {
                 if (MailboxMenuManager.playerInventories.get(receiverPlayer) instanceof PlayerMailbox receiverMailbox) {
