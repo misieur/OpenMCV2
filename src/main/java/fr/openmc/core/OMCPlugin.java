@@ -117,7 +117,6 @@ public class OMCPlugin extends JavaPlugin {
         }
         new AdminShopManager();
         new BossbarManager();
-        new ContestManager();
         new PrivateMessageManager();
         new AnimationsManager();
 
@@ -129,11 +128,6 @@ public class OMCPlugin extends JavaPlugin {
         HomeIconCacheManager.initialize();
 
         PlayerSettingsManager.loadAllPlayerSettings();
-
-        if (WorldGuardHook.hasWorldGuard()) {
-            ParticleUtils.spawnParticlesInRegion("spawn", Bukkit.getWorld("world"), Particle.CHERRY_LEAVES, 50, 70, 130);
-            ParticleUtils.spawnContestParticlesInRegion("spawn", Bukkit.getWorld("world"), 10, 70, 135);
-        }
     }
 
     public void loadWithItemsAdder() {
@@ -142,6 +136,11 @@ public class OMCPlugin extends JavaPlugin {
         new MilestonesManager();
         new QuestsManager();
         new CityManager();
+        new ContestManager();
+        if (WorldGuardHook.hasWorldGuard()) {
+            ParticleUtils.spawnParticlesInRegion("spawn", Bukkit.getWorld("world"), Particle.CHERRY_LEAVES, 50, 70, 130);
+            ParticleUtils.spawnContestParticlesInRegion("spawn", Bukkit.getWorld("world"), 10, 70, 135);
+        }
     }
 
     @Override

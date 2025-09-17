@@ -1,5 +1,7 @@
 package fr.openmc.core.features.milestones.tutorial.quests;
 
+import fr.openmc.core.features.city.City;
+import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.events.CityCreationEvent;
 import fr.openmc.core.features.city.events.MemberJoinEvent;
 import fr.openmc.core.features.milestones.MilestoneType;
@@ -49,7 +51,14 @@ public class CityCreateQuest extends Quest implements Listener {
                         MessageType.SUCCESS
                 ),
                 new QuestMethodsReward(
-                        player -> TutorialUtils.completeStep(type, player, step)
+                        player -> {
+                            TutorialUtils.completeStep(type, player, step);
+
+                            City playerCity = CityManager.getPlayerCity(player.getUniqueId());
+                            if (playerCity.getLevel() >= 2) {
+                                TutorialStep.CITY_LEVEL_2.getQuest().incrementProgress(player.getUniqueId());
+                            }
+                        }
                 )
         ));
     }
@@ -71,9 +80,6 @@ public class CityCreateQuest extends Quest implements Listener {
 
         if (player.isOnline()) {
             this.incrementProgress(player.getUniqueId());
-            if (event.getCity().getLevel() >= 2) {
-                TutorialStep.CITY_LEVEL_2.getQuest().incrementProgress(player.getUniqueId());
-            }
         }
     }
 }
