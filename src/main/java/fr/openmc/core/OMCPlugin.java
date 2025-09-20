@@ -16,6 +16,7 @@ import fr.openmc.core.features.city.sub.notation.NotationManager;
 import fr.openmc.core.features.city.sub.statistics.CityStatisticsManager;
 import fr.openmc.core.features.city.sub.war.WarManager;
 import fr.openmc.core.features.contest.managers.ContestManager;
+import fr.openmc.core.features.cube.multiblocks.MultiBlockManager;
 import fr.openmc.core.features.displays.TabList;
 import fr.openmc.core.features.displays.bossbar.BossbarManager;
 import fr.openmc.core.features.displays.holograms.HologramLoader;
@@ -127,6 +128,8 @@ public class OMCPlugin extends JavaPlugin {
         new MascotsManager();
         HomeIconCacheManager.initialize();
 
+        new MultiBlockManager();
+
         PlayerSettingsManager.loadAllPlayerSettings();
     }
 
@@ -149,6 +152,9 @@ public class OMCPlugin extends JavaPlugin {
         if (!OMCPlugin.isUnitTestVersion()) {
             HologramLoader.unloadAll();
         }
+
+        // - MultiBlocks
+        MultiBlockManager.save();
 
         // - War
         WarManager.saveWarHistories();
