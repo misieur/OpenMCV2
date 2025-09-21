@@ -202,8 +202,9 @@ public class Cube extends MultiBlock {
             }
         }
 
+        int shockRadiusSq = shockRadius * shockRadius;
         for (Player player : world.getPlayers()) {
-            if (player.getLocation().distanceSquared(this.getCenter()) <= shockRadius * shockRadius) {
+            if (player.getLocation().distanceSquared(this.getCenter()) <= shockRadiusSq) {
                 particlePackets.add(ParticleUtils.getParticlePacket(
                         Particle.ELECTRIC_SPARK,
                         player.getLocation().add(0, 1, 0),
@@ -217,7 +218,8 @@ public class Cube extends MultiBlock {
                 world.playSound(player.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.2f, 2f);
             }
         }
-        players.forEach(player -> player.connection.send(new ClientboundBundlePacket(particlePackets)));
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(particlePackets);
+        players.forEach(player -> player.connection.send(bundlePacket));
     }
 
     public final int RADIUS_BUBBLE = this.radius * 3;
@@ -272,7 +274,6 @@ public class Cube extends MultiBlock {
     }
 
     public void startBubbleParticles() {
-        World world = this.origin.getWorld();
         Location center = this.getCenter();
         double radius = RADIUS_BUBBLE;
 
