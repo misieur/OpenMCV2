@@ -1,10 +1,11 @@
 package fr.openmc.core.features.city.sub.war.commands;
 
 import fr.openmc.api.cooldown.DynamicCooldownManager;
-import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
+import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.CityType;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.features.city.sub.war.WarManager;
 import fr.openmc.core.features.city.sub.war.WarPendingDefense;
 import fr.openmc.core.features.city.sub.war.actions.WarActions;
@@ -36,6 +37,11 @@ public class WarCommand {
             return;
         }
 
+        if (!FeaturesRewards.hasUnlockFeature(playerCity, FeaturesRewards.Feature.WAR)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.WAR) + "!"), Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
         if (!playerCity.getType().equals(CityType.WAR)) {
             MessagesManager.sendMessage(player,
                     Component.text("Votre ville n'est pas dans un statut de §cguerre §f! Changez la type de votre ville avec §c/city type §fou depuis le §cMenu Principal des Villes"),
@@ -57,6 +63,13 @@ public class WarCommand {
             return;
         }
 
+        if (WarManager.getPendingDefenseFor(playerCity) != null) {
+            MessagesManager.sendMessage(player,
+                    Component.text("Vous avez déjà été déclaré en guerre !"),
+                    Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
         if (playerCity.isInWar()) {
             MessagesManager.sendMessage(player,
                     Component.text("Vous êtes déjà en guerre !"),
@@ -74,6 +87,11 @@ public class WarCommand {
         City city = CityManager.getPlayerCity(player.getUniqueId());
         if (city == null) {
             player.sendMessage("§cVous n'avez pas de ville.");
+            return;
+        }
+
+        if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.WAR)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.WAR) + "!"), Prefix.CITY, MessageType.ERROR, false);
             return;
         }
 

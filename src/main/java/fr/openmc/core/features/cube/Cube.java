@@ -272,6 +272,7 @@ public class Cube extends MultiBlock {
     }
 
     public void startBubbleParticles() {
+        World world = this.origin.getWorld();
         Location center = this.getCenter();
         double radius = RADIUS_BUBBLE;
 
