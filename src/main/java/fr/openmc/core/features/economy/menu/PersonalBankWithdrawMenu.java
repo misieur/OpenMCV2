@@ -1,16 +1,11 @@
 package fr.openmc.core.features.economy.menu;
 
-import fr.openmc.api.input.signgui.SignGUI;
-import fr.openmc.api.input.signgui.exception.SignGUIVersionException;
+import fr.openmc.api.input.DialogInput;
 import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.core.features.economy.BankManager;
 import fr.openmc.core.features.economy.EconomyManager;
-import fr.openmc.core.utils.ItemUtils;
-import fr.openmc.core.utils.messages.MessageType;
-import fr.openmc.core.utils.messages.MessagesManager;
-import fr.openmc.core.utils.messages.Prefix;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
@@ -20,10 +15,11 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static fr.openmc.core.utils.InputUtils.MAX_LENGTH;
 
 public class PersonalBankWithdrawMenu extends Menu {
 
@@ -33,7 +29,12 @@ public class PersonalBankWithdrawMenu extends Menu {
 
     @Override
     public @NotNull String getName() {
-        return "Menu des Banques - Banque Personel";
+        return "Menu des Banques - Retirer";
+    }
+
+    @Override
+    public String getTexture() {
+        return null;
     }
 
     @Override
@@ -47,8 +48,8 @@ public class PersonalBankWithdrawMenu extends Menu {
     }
 
     @Override
-    public @NotNull Map<Integer, ItemStack> getContent() {
-        Map<Integer, ItemStack> inventory = new HashMap<>();
+    public @NotNull Map<Integer, ItemBuilder> getContent() {
+        Map<Integer, ItemBuilder> inventory = new HashMap<>();
         Player player = getOwner();
 
         double moneyBankPlayer = BankManager.getBankBalance(player.getUniqueId());
@@ -56,9 +57,9 @@ public class PersonalBankWithdrawMenu extends Menu {
 
         List<Component> loreBankWithdrawAll = List.of(
                 Component.text("§7Tout l'argent placé dans §6Votre Banque §7vous sera donné"),
-                Component.text(""),
+                Component.empty(),
                 Component.text("§7Montant qui vous sera donné : §d" + EconomyManager.getFormattedSimplifiedNumber(moneyBankPlayer) + " ").append(Component.text(EconomyManager.getEconomyIcon()).decoration(TextDecoration.ITALIC, false)),
-                Component.text(""),
+                Component.empty(),
                 Component.text("§e§lCLIQUEZ ICI POUR PRENDRE")
         );
 
@@ -66,22 +67,15 @@ public class PersonalBankWithdrawMenu extends Menu {
             itemMeta.itemName(Component.text("§7Prendre l'§6Argent de votre banque"));
             itemMeta.lore(loreBankWithdrawAll);
         }).setOnClick(inventoryClickEvent -> {
-            if (halfMoneyBankPlayer != 0) {
-                BankManager.withdrawBankBalance(player.getUniqueId(), moneyBankPlayer);
-                EconomyManager.addBalance(player.getUniqueId(), moneyBankPlayer);
-                MessagesManager.sendMessage(player, Component.text("§d" + EconomyManager.getFormattedSimplifiedNumber(moneyBankPlayer)
-                            + "§r" + EconomyManager.getEconomyIcon() + " ont été transférés à votre compte"), Prefix.BANK, MessageType.SUCCESS, false);
-            } else {
-                MessagesManager.sendMessage(player, Component.text("Impossible de vous transféré l'argent, votre banque est vide"), Prefix.BANK, MessageType.ERROR, false);
-            }
             player.closeInventory();
+            BankManager.withdraw(player.getUniqueId(), String.valueOf(moneyBankPlayer));
         }));
 
         List<Component> loreBankWithdrawHalf = List.of(
             Component.text("§7La Moitié de l'Argent sera pris de §6Votre Banque §7pour vous le donner"),
-            Component.text(""),
+                Component.empty(),
             Component.text("§7Montant qui vous sera donné : §d" + EconomyManager.getFormattedSimplifiedNumber(halfMoneyBankPlayer) + " ").append(Component.text(EconomyManager.getEconomyIcon()).decoration(TextDecoration.ITALIC, false)),
-            Component.text(""),
+                Component.empty(),
             Component.text("§e§lCLIQUEZ ICI POUR PRENDRE")
         );
 
@@ -89,14 +83,7 @@ public class PersonalBankWithdrawMenu extends Menu {
             itemMeta.itemName(Component.text("§7Prendre la moitié de l'§6Argent de votre banque"));
             itemMeta.lore(loreBankWithdrawHalf);
         }).setOnClick(inventoryClickEvent -> {
-            if (halfMoneyBankPlayer != 0) {
-                BankManager.withdrawBankBalance(player.getUniqueId(), halfMoneyBankPlayer);
-                EconomyManager.addBalance(player.getUniqueId(), halfMoneyBankPlayer);
-                MessagesManager.sendMessage(player, Component.text("§d" + EconomyManager.getFormattedSimplifiedNumber(halfMoneyBankPlayer) + "§r" + EconomyManager.getEconomyIcon() + " ont été transférés à votre compte"), Prefix.BANK, MessageType.SUCCESS, false);
-            } else {
-                MessagesManager.sendMessage(player, Component.text("Impossible de vous transféré l'argent, votre banque est vide"), Prefix.BANK, MessageType.ERROR, false);
-            }
-
+            BankManager.withdraw(player.getUniqueId(), String.valueOf(halfMoneyBankPlayer));
             player.closeInventory();
         }));
 
@@ -110,30 +97,11 @@ public class PersonalBankWithdrawMenu extends Menu {
             itemMeta.itemName(Component.text("§7Prendre un §6montant précis"));
             itemMeta.lore(loreBankWithdrawInput);
         }).setOnClick(inventoryClickEvent -> {
+            DialogInput.send(player, Component.text("Entrez le montant que vous voulez retirer"), MAX_LENGTH, input -> {
+                if (input == null) return;
 
-            String[] lines = new String[4];
-            lines[0] = "";
-            lines[1] = " ᐱᐱᐱᐱᐱᐱᐱ ";
-            lines[2] = "Entrez votre";
-            lines[3] = "montant ci dessus";
-
-            SignGUI gui = null;
-            try {
-                gui = SignGUI.builder()
-                        .setLines(null, lines[1] , lines[2], lines[3])
-                        .setType(ItemUtils.getSignType(player))
-                        .setHandler((p, result) -> {
-                            String input = result.getLine(0);
-                            BankManager.withdrawBankBalance(player, input);
-                            return Collections.emptyList();
-                        })
-                        .build();
-            } catch (SignGUIVersionException e) {
-                throw new RuntimeException(e);
-            }
-
-            gui.open(player);
-
+                BankManager.withdraw(player.getUniqueId(), input);
+            });
         }));
 
         inventory.put(18, new ItemBuilder(this, Material.ARROW, itemMeta -> {
@@ -142,9 +110,7 @@ public class PersonalBankWithdrawMenu extends Menu {
                     Component.text("§7Vous allez retourner au Menu de votre Banque"),
                     Component.text("§e§lCLIQUEZ ICI POUR CONFIRMER")
             ));
-        }).setOnClick(inventoryClickEvent -> {
-            new PersonalBankMenu(player).open();
-        }));
+        }, true));
 
         return inventory;
     }

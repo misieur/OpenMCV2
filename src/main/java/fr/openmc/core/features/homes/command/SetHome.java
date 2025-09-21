@@ -19,6 +19,7 @@ import revxrsal.commands.annotation.Description;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 import java.util.List;
+import java.util.UUID;
 
 public class SetHome {
     private final HomesManager homesManager;
@@ -32,7 +33,6 @@ public class SetHome {
     @CommandPermission("omc.commands.home.sethome")
     @AutoComplete("@homes")
     public void setHome(Player player, String name) {
-
         if(homesManager.disabledWorldHome.isDisabledWorld(player.getWorld())) {
             MessagesManager.sendMessage(player, Component.text("§cVous ne pouvez pas définir de home dans ce monde."), Prefix.HOME, MessageType.ERROR, true);
             return;
@@ -66,8 +66,8 @@ public class SetHome {
                 }
             }
 
-            Home home = new Home(target.getUniqueId(), homeName, player.getLocation(), HomeIconRegistry.getDefaultIcon());
-            homesManager.addHome(home);
+            Home home = new Home(UUID.randomUUID(), target.getUniqueId(), homeName, player.getLocation(), HomeIconRegistry.getDefaultIcon());
+            HomesManager.addHome(home);
 
             MessagesManager.sendMessage(player, Component.text("§aLe home §e" + homeName + " §aa été défini pour §e" + targetName + "§a."), Prefix.HOME, MessageType.SUCCESS, true);
             if(target.isOnline() && target instanceof Player targetPlayer) {
@@ -83,7 +83,7 @@ public class SetHome {
         }
 
         int currentHome = HomesManager.getHomes(player.getUniqueId()).size();
-        int homesLimit = homesManager.getHomeLimit(player.getUniqueId());
+        int homesLimit = HomesManager.getHomeLimit(player.getUniqueId());
 
         if(currentHome >= homesLimit) {
             MessagesManager.sendMessage(player, Component.text("§cVous avez atteint la limite de homes."), Prefix.HOME, MessageType.ERROR, true);
@@ -99,11 +99,11 @@ public class SetHome {
             }
         }
 
-        Home home = new Home(player.getUniqueId(), name, player.getLocation(), HomeIconRegistry.getDefaultIcon());
+        Home home = new Home(UUID.randomUUID(), player.getUniqueId(), name, player.getLocation(), HomeIconRegistry.getDefaultIcon());
         Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
             Bukkit.getPluginManager().callEvent(new HomeCreateEvent(home, player));
         });
-        homesManager.addHome(home);
+        HomesManager.addHome(home);
 
 
         MessagesManager.sendMessage(player, Component.text("§aVotre home §e" + name + " §aa été défini."), Prefix.HOME, MessageType.SUCCESS, true);

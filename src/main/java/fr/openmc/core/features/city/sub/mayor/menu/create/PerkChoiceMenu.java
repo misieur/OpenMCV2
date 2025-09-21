@@ -1,31 +1,31 @@
 package fr.openmc.core.features.city.sub.mayor.menu.create;
 
+import dev.lone.itemsadder.api.FontImages.FontImageWrapper;
 import fr.openmc.api.menulib.PaginatedMenu;
+import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
+import fr.openmc.api.menulib.utils.StaticSlots;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.sub.mayor.perks.PerkType;
 import fr.openmc.core.features.city.sub.mayor.perks.Perks;
-import fr.openmc.core.utils.api.ItemsAdderApi;
-import fr.openmc.core.utils.api.PapiApi;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.items.CustomItemRegistry;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static fr.openmc.api.menulib.utils.StaticSlots.*;
+import static fr.openmc.api.menulib.utils.StaticSlots.combine;
 
 public class PerkChoiceMenu extends PaginatedMenu {
     private final String perkNumber;
@@ -50,11 +50,11 @@ public class PerkChoiceMenu extends PaginatedMenu {
 
     @Override
     public @NotNull List<Integer> getStaticSlots() {
-        return combine(combine(RIGHT, LEFT), BOTTOM);
+        return combine(combine(StaticSlots.getRightSlots(getInventorySize()), StaticSlots.getLeftSlots(getInventorySize())), StaticSlots.getBottomSlots(getInventorySize()));
     }
 
     @Override
-    public @NotNull List<ItemStack> getItems() {
+    public List<ItemStack> getItems() {
         List<ItemStack> items = new ArrayList<>();
         Player player = getOwner();
 
@@ -70,31 +70,81 @@ public class PerkChoiceMenu extends PaginatedMenu {
 
             if (newPerk == perk1 || newPerk == perk2 || newPerk == perk3) continue;
 
+            List<Component> perkLore = new ArrayList<>(newPerk.getLore());
+
+            perkLore.add(Component.text(newPerk.getCategory().getName()));
+
+            switch (newPerk.getCategory()) {
+                case AGRICULTURAL -> {
+                    if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_AGRICULTURAL)) {
+                        perkLore.add(Component.text("§cVous devez etre Niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.PERK_AGRICULTURAL) + " pour débloquer ceci"));
+                    }
+                }
+                case ECONOMIC -> {
+                    if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_ECONOMY)) {
+                        perkLore.add(Component.text("§cVous devez etre Niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.PERK_ECONOMY) + " pour débloquer ceci"));
+                    }
+                }
+                case MILITARY -> {
+                    if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_MILITARY)) {
+                        perkLore.add(Component.text("§cVous devez etre Niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.PERK_MILITARY) + " pour débloquer ceci"));
+                    }
+                }
+                case STRATEGY -> {
+                    if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_STRATEGY)) {
+                        perkLore.add(Component.text("§cVous devez etre Niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.PERK_STRATEGY) + " pour débloquer ceci"));
+                    }
+                }
+            }
+
+
             ItemStack perkItem = new ItemBuilder(this, newPerk.getItemStack(), itemMeta -> {
                 itemMeta.customName(Component.text(newPerk.getName()));
-                itemMeta.lore(newPerk.getLore());
-                itemMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
-                itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-            }).setOnClick(inventoryClickEvent -> {
-                boolean isPerkEvent = (newPerk.getType() == PerkType.EVENT) &&
-                        (
-                                ("perk1".equals(perkNumber) && ((perk2 != null && perk2.getType() == PerkType.EVENT) || (perk3 != null && perk3.getType() == PerkType.EVENT))) ||
-                                        ("perk2".equals(perkNumber) && ((perk1 != null && perk1.getType() == PerkType.EVENT) || (perk3 != null && perk3.getType() == PerkType.EVENT))) ||
-                                        ("perk3".equals(perkNumber) && ((perk1 != null && perk1.getType() == PerkType.EVENT) || (perk2 != null && perk2.getType() == PerkType.EVENT)))
-                        );
-                if (isPerkEvent) {
-                    MessagesManager.sendMessage(player, Component.text("Vous ne pouvez pas choisir 2 Réformes de Type Evenement!"), Prefix.MAYOR, MessageType.ERROR, false);
-                    return;
-                }
+                itemMeta.lore(perkLore);
+            })
+                    .hide((newPerk != null) ? newPerk.getToHide() : null)
+                    .setOnClick(inventoryClickEvent -> {
+                        switch (newPerk.getCategory()) {
+                            case AGRICULTURAL -> {
+                                if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_AGRICULTURAL)) {
+                                    return;
+                                }
+                            }
+                            case ECONOMIC -> {
+                                if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_ECONOMY)) {
+                                    return;
+                                }
+                            }
+                            case MILITARY -> {
+                                if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_MILITARY)) {
+                                    return;
+                                }
+                            }
+                            case STRATEGY -> {
+                                if (!FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.PERK_STRATEGY)) {
+                                    return;
+                                }
+                            }
+                        }
 
-                if (Objects.equals(perkNumber, "perk1")) {
-                    new MayorCreateMenu(player, newPerk, perk2, perk3, type).open();
-                } else if (Objects.equals(perkNumber, "perk2")) {
-                    new MayorCreateMenu(player, perk1, newPerk, perk3, type).open();
-                } else if (Objects.equals(perkNumber, "perk3")) {
-                    new MayorCreateMenu(player, perk1, perk2, newPerk, type).open();
-                }
+                        boolean isPerkEvent = (newPerk.getType() == PerkType.EVENT) &&
+                                (
+                                        ("perk1".equals(perkNumber) && ((perk2 != null && perk2.getType() == PerkType.EVENT) || (perk3 != null && perk3.getType() == PerkType.EVENT))) ||
+                                                ("perk2".equals(perkNumber) && ((perk1 != null && perk1.getType() == PerkType.EVENT) || (perk3 != null && perk3.getType() == PerkType.EVENT))) ||
+                                                ("perk3".equals(perkNumber) && ((perk1 != null && perk1.getType() == PerkType.EVENT) || (perk2 != null && perk2.getType() == PerkType.EVENT)))
+                                );
+                        if (isPerkEvent) {
+                            MessagesManager.sendMessage(player, Component.text("Vous ne pouvez pas choisir 2 Réformes de Type Evenement!"), Prefix.MAYOR, MessageType.ERROR, false);
+                            return;
+                        }
 
+                        if (Objects.equals(perkNumber, "perk1")) {
+                            new MayorCreateMenu(player, newPerk, perk2, perk3, type).open();
+                        } else if (Objects.equals(perkNumber, "perk2")) {
+                            new MayorCreateMenu(player, perk1, newPerk, perk3, type).open();
+                        } else if (Objects.equals(perkNumber, "perk3")) {
+                            new MayorCreateMenu(player, perk1, perk2, newPerk, type).open();
+                        }
             });
 
             items.add(perkItem);
@@ -104,13 +154,14 @@ public class PerkChoiceMenu extends PaginatedMenu {
     }
 
     @Override
-    public Map<Integer, ItemStack> getButtons() {
-        Map<Integer, ItemStack> map = new HashMap<>();
+    public Map<Integer, ItemBuilder> getButtons() {
+        Map<Integer, ItemBuilder> map = new HashMap<>();
         map.put(49, new ItemBuilder(this, CustomItemRegistry.getByName("_iainternal:icon_cancel").getBest(), itemMeta -> {
             itemMeta.displayName(Component.text("§7Revenir en arrière"));
         }).setOnClick(inventoryClickEvent -> {
             new MayorCreateMenu(getOwner(), perk1, perk2, perk3, type).open();
         }));
+
         map.put(48, new ItemBuilder(this, CustomItemRegistry.getByName("_iainternal:icon_back_orange").getBest(), itemMeta -> {
             itemMeta.displayName(Component.text("§cPage précédente"));
         }).setPreviousPageButton());
@@ -122,11 +173,22 @@ public class PerkChoiceMenu extends PaginatedMenu {
 
     @Override
     public @NotNull String getName() {
-        if (PapiApi.hasPAPI() && ItemsAdderApi.hasItemAdder()) {
-            return PlaceholderAPI.setPlaceholders(getOwner(), "§r§f%img_offset_-38%%img_mayor%");
-        } else {
-            return "Menu des Maires - Reformes";
-        }
+        return "Menu des Maires - Reformes";
+    }
+
+    @Override
+    public String getTexture() {
+        return FontImageWrapper.replaceFontImages("§r§f:offset_-38::mayor:");
+    }
+
+    @Override
+    public @NotNull InventorySize getInventorySize() {
+        return InventorySize.LARGEST;
+    }
+
+    @Override
+    public int getSizeOfItems() {
+        return getItems().size();
     }
 
     @Override

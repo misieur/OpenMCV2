@@ -5,6 +5,7 @@ import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
+import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.mailboxes.letter.LetterHead;
 import fr.openmc.core.features.mailboxes.menu.PlayerMailbox;
 import fr.openmc.core.features.mailboxes.menu.letter.LetterMenu;
@@ -30,8 +31,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static fr.openmc.core.features.mailboxes.utils.MailboxUtils.*;
 
@@ -40,34 +39,47 @@ public class MailboxManager {
 
     private static Dao<Letter, Integer> letterDao;
 
-    public static void init_db(ConnectionSource connectionSource) throws SQLException {
+    public static void initDB(ConnectionSource connectionSource) throws SQLException {
         TableUtils.createTableIfNotExists(connectionSource, Letter.class);
         letterDao = DaoManager.createDao(connectionSource, Letter.class);
     }
 
+    private static final int MAX_STACKS_PER_LETTER = 27;
+
     public static boolean sendItems(Player sender, OfflinePlayer receiver, ItemStack[] items) {
-        if (!canSend(sender, receiver))
-            return false;
+        if (!canSend(sender, receiver)) return false;
+
+        List<ItemStack> allItems = Arrays.asList(items);
+        for (int i = 0; i < allItems.size(); i += MAX_STACKS_PER_LETTER) {
+            List<ItemStack> subList = allItems.subList(i, Math.min(i + MAX_STACKS_PER_LETTER, allItems.size()));
+            if (!sendLetter(sender, receiver, subList.toArray(new ItemStack[0]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean sendLetter(Player sender, OfflinePlayer receiver, ItemStack[] items) {
         String receiverName = receiver.getName();
         int numItems = Arrays.stream(items).mapToInt(ItemStack::getAmount).sum();
         LocalDateTime sent = LocalDateTime.now();
 
         try {
             byte[] itemsBytes = BukkitSerializer.serializeItemStacks(items);
-            Letter letter = new Letter(sender.getUniqueId(), receiver.getUniqueId(), itemsBytes, numItems,
-                    Timestamp.valueOf(LocalDateTime.now()), false);
-            if (letterDao.create(letter) == 0)
-                return false;
-            int id = letter.getId();
+            Letter letter = new Letter(sender.getUniqueId(), receiver.getUniqueId(), itemsBytes, numItems, Timestamp.valueOf(sent), false);
+            if (letterDao.create(letter) == 0) return false;
 
+            int id = letter.getId();
             Player receiverPlayer = receiver.getPlayer();
             if (receiverPlayer != null) {
                 if (MailboxMenuManager.playerInventories.get(receiverPlayer) instanceof PlayerMailbox receiverMailbox) {
                     LetterHead letterHead = new LetterHead(sender, numItems, id, sent);
                     receiverMailbox.addLetter(letterHead);
-                } else
+                } else {
                     sendNotification(receiverPlayer, numItems, id, sender.getName());
+                }
             }
+
             sendSuccessSendingMessage(sender, receiverName, numItems);
             return true;
         } catch (Exception ex) {
@@ -93,11 +105,8 @@ public class MailboxManager {
                 letters.add(letter);
             }
             letterDao.create(letters);
-        } catch (SQLException e) {
-            Logger.getLogger(MailboxManager.class.getName()).log(Level.SEVERE,
-                    "Erreur lors de l'envoi des items batch à des joueurs hors ligne", e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException | IOException e) {
+            OMCPlugin.getInstance().getSLF4JLogger().warn("Error while sending items to offline players: {}", e.getMessage(), e);
         }
     }
 
@@ -108,8 +117,6 @@ public class MailboxManager {
             query.setCountOf(true);
 
             long count = letterDao.countOf(query.prepare());
-
-
             if (count == 0)
                 return;
 
@@ -193,8 +200,10 @@ public class MailboxManager {
         }
     }
 
-    // todo
     public static boolean canSend(Player sender, OfflinePlayer receiver) {
+        if (sender.getUniqueId().equals(receiver.getUniqueId()))
+            return true
+                    ;
         PlayerSettings settings = PlayerSettingsManager.getPlayerSettings(receiver.getUniqueId());
         return settings.canPerformAction(SettingType.MAILBOX_RECEIVE_POLICY, sender.getUniqueId());
     }

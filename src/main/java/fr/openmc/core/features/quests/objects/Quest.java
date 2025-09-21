@@ -1,10 +1,10 @@
 package fr.openmc.core.features.quests.objects;
 
 import fr.openmc.core.OMCPlugin;
-import fr.openmc.core.features.adminshop.AdminShopManager;
 import fr.openmc.core.features.quests.events.QuestCompleteEvent;
 import fr.openmc.core.features.quests.rewards.QuestItemReward;
 import fr.openmc.core.features.quests.rewards.QuestReward;
+import fr.openmc.core.utils.ItemUtils;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
@@ -12,7 +12,6 @@ import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -74,7 +73,7 @@ public class Quest {
      * @param name            The name of the quest
      * @param baseDescription The base description of the quest
      * @param icon            The icon representing the quest - ItemStack
-     * @param isLargeActionBar If true, the quest will be displayed in large action bar
+     * @param isLargeActionBar If true, the quest will be displayed in the large action bar
      */
     public Quest(String name, List<String> baseDescription, ItemStack icon, boolean isLargeActionBar) {
         this.name = name;
@@ -89,7 +88,7 @@ public class Quest {
      * @param name            The name of the quest
      * @param baseDescription The base description of the quest
      * @param icon            The icon representing the quest - Material
-     * @param isLargeActionBar If true, the quest will be displayed in large action bar
+     * @param isLargeActionBar If true, the quest will be displayed in the large action bar
      */
     public Quest(String name, List<String> baseDescription, Material icon, boolean isLargeActionBar) {
         this.name = name;
@@ -267,7 +266,7 @@ public class Quest {
 
                 for (QuestReward reward : tier.getRewards()) {
                     if (reward instanceof QuestItemReward itemReward) {
-                        if (!AdminShopManager.hasEnoughSpace(player, itemReward.getItemStack())) {
+                        if (!ItemUtils.hasEnoughSpace(player, itemReward.getItemStack())) {
                             hasEnoughSpace = false;
                         }
                     }
@@ -281,7 +280,7 @@ public class Quest {
                 }
 
                 Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () -> {
-                    Bukkit.getPluginManager().callEvent(new QuestCompleteEvent(player));
+                    Bukkit.getPluginManager().callEvent(new QuestCompleteEvent(player, this));
                 });
 
                 Component titleMain = Component.text(
@@ -374,7 +373,7 @@ public class Quest {
 
         for (QuestReward reward : rewards) {
             if (reward instanceof QuestItemReward itemReward) {
-                if (!AdminShopManager.hasEnoughSpace(player, itemReward.getItemStack())) {
+                if (!ItemUtils.hasEnoughSpace(player, itemReward.getItemStack())) {
                     remainingRewards.add(reward);
                     allClaimed = false;
                     continue;
@@ -407,7 +406,7 @@ public class Quest {
     /**
      * Complete a specific step of the current tier for a player.
      * <p>
-     * This method will check if the step is completed and if so, it will complete the step and check if the tier is completed.
+     * This method will check if the step is completed, and if so, it will complete the step and check if the tier is completed.
      * @param playerUUID the UUID of the player
      * @param stepIndex the index of the step to complete
      */
@@ -468,7 +467,7 @@ public class Quest {
     /**
      * Increment the progress of the quest for a player.
      * <p>
-     * This method will check if the quest is fully completed and if not, it will increment the progress.
+     * This method will check if the quest is fully completed, and if not, it will increment the progress.
      * @param playerUUID The UUID of the player
      */
     public void incrementProgress(UUID playerUUID) {
@@ -501,7 +500,7 @@ public class Quest {
                     if (onlinePlayer != null && onlinePlayer.isOnline()) {
                         if (this.isLargeActionBar && newProgress % 50 != 0) return;
                         Component actionBar = Component.text()
-                                .append(MiniMessage.miniMessage().deserialize(Prefix.QUEST.getPrefix()))
+                                .append(Prefix.QUEST.getPrefix())
                                 .append(Component.text(" » ", NamedTextColor.DARK_GRAY))
                                 .append(Component.text("Progression de la quête ", NamedTextColor.GRAY))
                                 .append(Component.text(this.name, NamedTextColor.WHITE))
@@ -520,7 +519,7 @@ public class Quest {
     /**
      * Increment the progress of a specific step of the current tier for a player.
      * <p>
-     * This method will check if the step is completed and if so, it will complete the step and check if the tier is completed.
+     * This method will check if the step is completed, and if so, it will complete the step and check if the tier is completed.
      * @param playerUUID the UUID of the player
      * @param stepIndex the index of the step to increment
      */
@@ -531,7 +530,7 @@ public class Quest {
     /**
      * Increment the progress of a specific step of the current tier for a player by a specified amount.
      * <p>
-     * This method will check if the step is completed and if so, it will complete the step and check if the tier is completed.
+     * This method will check if the step is completed, and if so, it will complete the step and check if the tier is completed.
      * @param playerUUID the UUID of the player
      * @param stepIndex the index of the step to increment
      * @param amount The amount to increment the progress by
@@ -550,7 +549,7 @@ public class Quest {
     /**
      * Increment the progress of a specific step of the current tier for a player by a specified amount.
      * <p>
-     * This method will check if the step is completed and if so, it will complete the step and check if the tier is completed.
+     * This method will check if the step is completed, and if so, it will complete the step and check if the tier is completed.
      * @param playerUUID the UUID of the player
      * @param stepDescription the description of the step to increment
      * @param amount The amount to increment the progress by

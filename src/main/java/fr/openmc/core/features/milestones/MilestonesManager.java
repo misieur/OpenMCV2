@@ -18,7 +18,6 @@ import java.util.*;
 
 public class MilestonesManager {
     private static final Set<Milestone> milestones = new HashSet<>();
-    ;
 
     private static Dao<MilestoneModel, String> millestoneDao;
 
@@ -42,13 +41,13 @@ public class MilestonesManager {
      *
      * @param connectionSource the connection source to the database
      */
-    public static void init_db(ConnectionSource connectionSource) throws SQLException {
+    public static void initDB(ConnectionSource connectionSource) throws SQLException {
         TableUtils.createTableIfNotExists(connectionSource, MilestoneModel.class);
         millestoneDao = DaoManager.createDao(connectionSource, MilestoneModel.class);
     }
 
     /**
-     * Load all milestones data from the database.
+     * Load all milestone data from the database.
      * This method retrieves all MilestoneModel entries and populates the player data for each milestone type.
      */
     public static void loadMilestonesData() {
@@ -66,7 +65,7 @@ public class MilestonesManager {
     }
 
     /**
-     * Save all milestones data to the database.
+     * Save all milestone data to the database.
      * This method iterates through each milestone and saves the player data for each milestone type.
      */
     public static void saveMilestonesData() {

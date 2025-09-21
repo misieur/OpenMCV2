@@ -6,7 +6,6 @@ import fr.openmc.core.features.displays.holograms.commands.HologramCommand;
 import fr.openmc.core.features.milestones.tutorial.TutorialHologram;
 import fr.openmc.core.utils.entities.TextDisplay;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -77,8 +76,6 @@ public class HologramLoader {
             for (int i = 0; i < hologram.getLines().length; i++) {
                 String rawLine = hologram.getLines()[i];
 
-                System.out.println(rawLine);
-
                 if (component == null) {
                     component = Component.text(rawLine);
                 } else {
@@ -106,13 +103,13 @@ public class HologramLoader {
         String hologramName = file.getName().replace(".yml", "");
         Location hologramLocation = hologramConfig.getLocation("location");
         if (hologramLocation == null) {
-            Bukkit.getLogger().warning("Hologram file " + file.getName() + " has invalid or missing location.");
+            OMCPlugin.getInstance().getSLF4JLogger().warn("Hologram {} has no location set in its config file, skipping.", hologramName);
             return;
         }
 
         float scale = (float) hologramConfig.getDouble("scale");
         List<String> lines = hologramConfig.getStringList("line");
-        if (lines == null || lines.isEmpty()) return;
+        if (lines.isEmpty()) return;
 
         Component component = null;
 

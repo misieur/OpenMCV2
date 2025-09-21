@@ -5,19 +5,22 @@ import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.api.menulib.utils.ItemUtils;
-import fr.openmc.core.features.city.CPermission;
 import fr.openmc.core.features.city.City;
+import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.CityType;
 import fr.openmc.core.features.city.sub.mayor.ElectionType;
 import fr.openmc.core.features.city.sub.mayor.managers.MayorManager;
 import fr.openmc.core.features.city.sub.mayor.managers.PerkManager;
 import fr.openmc.core.features.city.sub.mayor.models.Mayor;
 import fr.openmc.core.features.city.sub.mayor.perks.Perks;
+import fr.openmc.core.features.city.sub.milestone.rewards.MemberLimitRewards;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.utils.CacheOfflinePlayer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -46,9 +49,14 @@ public class CityListDetailsMenu extends Menu {
 	
 	@Override
 	public @NotNull String getName() {
-		return "Détails de la ville " + city.getName();
+		return "Menu de détails de la Ville " + city.getName();
 	}
-	
+
+	@Override
+	public String getTexture() {
+		return null;
+	}
+
 	@Override
 	public @NotNull InventorySize getInventorySize() {
 		return InventorySize.NORMAL;
@@ -60,8 +68,8 @@ public class CityListDetailsMenu extends Menu {
 	}
 	
 	@Override
-	public @NotNull Map<Integer, ItemStack> getContent() {
-		Map<Integer, ItemStack> map = new HashMap<>();
+	public @NotNull Map<Integer, ItemBuilder> getContent() {
+		Map<Integer, ItemBuilder> map = new HashMap<>();
 
 		List<Component> loreOwner = new ArrayList<>();
 
@@ -84,9 +92,9 @@ public class CityListDetailsMenu extends Menu {
 				loreOwner.addAll(perk3.getLore());
 			}
 
-			map.put(12, new ItemBuilder(this, ItemUtils.getPlayerSkull(this.city.getPlayerWithPermission(CPermission.OWNER)),
+			map.put(12, new ItemBuilder(this, ItemUtils.getPlayerSkull(this.city.getPlayerWithPermission(CityPermission.OWNER)),
 					itemMeta -> {
-						itemMeta.displayName(Component.text("§7Propriétaire : " + CacheOfflinePlayer.getOfflinePlayer(this.city.getPlayerWithPermission(CPermission.OWNER)).getName()));
+						itemMeta.displayName(Component.text("§7Propriétaire : " + CacheOfflinePlayer.getOfflinePlayer(this.city.getPlayerWithPermission(CityPermission.OWNER)).getName()));
 						itemMeta.lore(loreOwner);
 					})
 			);
@@ -100,7 +108,7 @@ public class CityListDetailsMenu extends Menu {
 				loreMayor.add(Component.text(perk3.getName()));
 				loreMayor.addAll(perk3.getLore());
 
-				map.put(14, new ItemBuilder(this, ItemUtils.getPlayerSkull(this.city.getPlayerWithPermission(CPermission.OWNER)),
+				map.put(14, new ItemBuilder(this, ItemUtils.getPlayerSkull(this.city.getPlayerWithPermission(CityPermission.OWNER)),
 								itemMeta -> {
 									itemMeta.displayName(
 											Component.text("§7Maire : ")
@@ -112,16 +120,17 @@ public class CityListDetailsMenu extends Menu {
 				);
 			}
 		} else {
-			map.put(13, new ItemBuilder(this, ItemUtils.getPlayerSkull(this.city.getPlayerWithPermission(CPermission.OWNER)),
+			map.put(13, new ItemBuilder(this, ItemUtils.getPlayerSkull(this.city.getPlayerWithPermission(CityPermission.OWNER)),
 					itemMeta -> {
-						itemMeta.displayName(Component.text("§7Propriétaire : " + CacheOfflinePlayer.getOfflinePlayer(this.city.getPlayerWithPermission(CPermission.OWNER)).getName()));
+						itemMeta.displayName(Component.text("§7Propriétaire : " + CacheOfflinePlayer.getOfflinePlayer(this.city.getPlayerWithPermission(CityPermission.OWNER)).getName()));
 					})
 			);
 		}
-
-
-		map.put(8, new ItemBuilder(this, city.getMascot().getMascotEgg(),
-				itemMeta -> itemMeta.displayName(Component.text("§dNiveau de la Mascotte : " + city.getMascot().getLevel()))));
+		
+		LivingEntity entity = (LivingEntity) city.getMascot().getEntity();
+		
+		map.put(8, new ItemBuilder(this, new ItemStack(entity != null ? Bukkit.getItemFactory().getSpawnEgg(entity.getType()) : Material.BARRIER),
+				itemMeta -> itemMeta.displayName(Component.text(entity != null ? "§dNiveau de la Mascotte : " + city.getMascot().getLevel() : "§cAucune mascotte trouvée (bug)"))));
 		
 		map.put(9, new ItemBuilder(this, new ItemStack(Material.PAPER),
 				itemMeta -> itemMeta.displayName(Component.text("§bTaille : " + city.getChunks().size() + " chunks"))));
@@ -131,19 +140,18 @@ public class CityListDetailsMenu extends Menu {
 		
 		map.put(4, new ItemBuilder(this, new ItemStack(Material.PLAYER_HEAD),
 				itemMeta -> {
-					itemMeta.displayName(Component.text("§bPopulation : " + city.getMembers().size() + (city.getMembers().size() > 1 ? " joueurs" : " joueur")));
+					itemMeta.displayName(Component.text("§bPopulation : " + city.getMembers().size() + "/" + MemberLimitRewards.getMemberLimit(city.getLevel()) + (city.getMembers().size() > 1 ? " joueurs" : " joueur")));
 					itemMeta.lore(List.of(
 							Component.empty(),
 									Component.text("§e§lCLIQUEZ ICI POUR VOIR LES MEMBRES")
 							)
 					);
-				}).setNextMenu(new CityPlayerListMenu(getOwner(), city)));
+				}).setOnClick(inventoryClickEvent -> new CityPlayerListMenu(getOwner(), city).open()));
 
 		map.put(26, new ItemBuilder(this, new ItemStack(city.getType().equals(CityType.WAR) ? Material.RED_BANNER : Material.GREEN_BANNER),
-				itemMeta -> itemMeta.displayName(Component.text("§eType : " + (city.getType().equals(CityType.WAR) ? "§cGuerre" : "§aPaix")))));
+				itemMeta -> itemMeta.displayName(Component.text("§eType : " + city.getType().getName()))));
 		map.put(18, new ItemBuilder(this, CustomStack.getInstance("_iainternal:icon_back_orange").getItemStack(),
-				itemMeta -> itemMeta.displayName(Component.text("§eRetour")))
-				.setOnClick(inventoryClickEvent -> new CityListMenu(getOwner()).open()));
+				itemMeta -> itemMeta.displayName(Component.text("§eRetour")), true));
 		return map;
 	}
 

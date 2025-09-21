@@ -1,14 +1,13 @@
 package fr.openmc.core.utils.translation;
 
-import org.bukkit.configuration.file.YamlConfiguration;
+import fr.openmc.core.OMCPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import fr.openmc.core.OMCPlugin;
 
 
 public class TranslationManager {
@@ -45,7 +44,7 @@ public class TranslationManager {
      *
      * @param path  The path to the translation
      * @param language The language of the translation, "default" for default language
-     * @param placeholders The placeholders you want to replace in pair with values ("player", player.getName())
+     * @param placeholders The placeholders you want to replace in a pair with values ("player", player.getName())
      */
     public static String getTranslation(String path, String language, String... placeholders) {
         return replacePlaceholders(getTranslation(path, language), placeholders);
@@ -73,16 +72,17 @@ public class TranslationManager {
         if (!languageFile.exists()) {
             try {
                 OMCPlugin.getInstance().saveResource(translationFolder.getPath() + language + ".yml", false);
-                OMCPlugin.getInstance().getLogger().info("Language loaded : " + language);
+                OMCPlugin.getInstance().getSLF4JLogger().info("Language {} not found, creating a new one from default template.", language);
             }
             catch (Exception ignored) {
-                OMCPlugin.getInstance().getLogger().warning("Language " + language + " does not exist");
+                OMCPlugin.getInstance().getSLF4JLogger().error("Failed to load the default language file: {}.yml. Please ensure it exists in the translations folder in the jar file.", language);
+                return;
             }
         }
 
         if (languageFile.exists()) {
             loadedLanguages.put(language, YamlConfiguration.loadConfiguration(languageFile));
-            OMCPlugin.getInstance().getLogger().info("Language " + language + " loaded");
+            OMCPlugin.getInstance().getSLF4JLogger().info("Language {} loaded successfully.", language);
         }
     }
 
@@ -90,7 +90,7 @@ public class TranslationManager {
      * Replaces the keys (between {}) in a String with the value Strings.
      *
      * @param text The string to modify
-     * @param placeholders The placeholders you want to replace in pair with values ("player", player.getName())
+     * @param placeholders The placeholders you want to replace in a pair with values ("player", player.getName())
      */
     public static String replacePlaceholders(String text, String... placeholders) {
         for (int i = 0; i < placeholders.length; i += 2) {

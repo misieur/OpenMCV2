@@ -67,7 +67,6 @@ public class ItemInteraction implements Listener {
         player.closeInventory();
         Chronometer.startChronometer(player, chronometerGroup, chronometerTime, ChronometerType.ACTION_BAR, startMessage, ChronometerType.ACTION_BAR, endMessage);
 
-
         ItemStack oldItemHand = player.getInventory().getItemInMainHand();
         player.getInventory().setItemInMainHand(itemInteraction);
 
@@ -98,13 +97,12 @@ public class ItemInteraction implements Listener {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
         if (isItemInteraction(item)) {
-
             event.setCancelled(true);
 
             String interactionId = item.getItemMeta().getPersistentDataContainer().get(NAMESPACE_KEY, PersistentDataType.STRING);
             if (interactionId == null) return;
 
-            Block targetBlock = null;
+            Block targetBlock;
 
             if (event.getClickedBlock() != null) {
                 BlockFace face = event.getBlockFace();
@@ -128,13 +126,12 @@ public class ItemInteraction implements Listener {
                             playerCallbacksMap.remove(interactionId);
                             playerChronometerMap.remove(interactionId);
 
-                            ChronometerInfo chronoInfo = interactionInfo.getChronometerInfo();
+                            ChronometerInfo chronoInfo = interactionInfo.chronometerInfo();
                             if (chronoInfo != null) {
-                                Chronometer.stopChronometer(player, chronoInfo.getChronometerGroup(), null, "%null%");
+                                Chronometer.stopChronometer(player, chronoInfo.chronometerGroup(), null, "%null%");
                             }
 
                             ItemStack oldItem = playerOldItemHand.getOrDefault(player.getUniqueId(), new HashMap<>()).remove(interactionId);
-
 
                             int slotOfItem = ItemUtils.getSlotOfItem(player, item);
 
@@ -168,22 +165,21 @@ public class ItemInteraction implements Listener {
     }
 
     /*
-     * Stopper l'interaction des que le Chronometre est fini
+     * Méthode qui permet de verifier si l'item est celui avec qui on interagit
      */
-    @EventHandler
-    void onTimeEnd(Chronometer.ChronometerEndEvent e) {
-        Player player = (Player) e.getEntity();
-        String chronometerGroup = e.getGroup();
+    private static boolean isItemInteraction(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR)
+            return false;
 
-        HashMap<String, Runnable> playerCallbacksMap = playerCallbacksFail.get(player.getUniqueId());
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null)
+            return false;
 
-        if (playerCallbacksMap != null) {
-            Runnable onFail = playerCallbacksMap.get(chronometerGroup);
-
-            onFail.run();
+        if (item != null && item.hasItemMeta()) {
+            PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
+            return data.has(NAMESPACE_KEY, PersistentDataType.STRING);
         }
-
-        stopInteraction(player, chronometerGroup);
+        return false;
     }
 
     @EventHandler
@@ -198,7 +194,7 @@ public class ItemInteraction implements Listener {
                 event.setCancelled(true);
                 MessagesManager.sendMessage(player, Component.text("§cVous ne pouvez pas déplacer cet objet dans un bundle"), Prefix.OPENMC, MessageType.ERROR, false);
             }
-        } else if (cursorItem != null && MaterialUtils.isBundle(cursorItem)) {
+        } else if (MaterialUtils.isBundle(cursorItem)) {
             if (isItemInteraction(clickedItem)) {
                 event.setCancelled(true);
                 MessagesManager.sendMessage(player, Component.text("§cVous ne pouvez pas déplacer cet objet dans un bundle"), Prefix.OPENMC, MessageType.ERROR, false);
@@ -251,7 +247,6 @@ public class ItemInteraction implements Listener {
         if (event.isShiftClick()) {
             MessagesManager.sendMessage(player, Component.text("§cVous ne pouvez pas déplacer cet objet par shift-click"), Prefix.OPENMC, MessageType.ERROR, false);
             event.setCancelled(true);
-            return;
         }
     }
 
@@ -304,21 +299,22 @@ public class ItemInteraction implements Listener {
     }
 
     /*
-     * Méthode qui permet de verifier si l'item est celui avec qui on intéragit
+     * Stopper l'interaction dès que le Chronometre est fini
      */
-    private static boolean isItemInteraction(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR)
-            return false;
+    @EventHandler
+    void onTimeEnd(Chronometer.ChronometerEndEvent e) {
+        Player player = (Player) e.getEntity();
+        String chronometerGroup = e.getGroup();
 
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null)
-            return false;
+        HashMap<String, Runnable> playerCallbacksMap = playerCallbacksFail.get(player.getUniqueId());
 
-        if (item != null && item.hasItemMeta()) {
-            PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
-            return data.has(NAMESPACE_KEY, PersistentDataType.STRING);
+        if (playerCallbacksMap != null) {
+            Runnable onFail = playerCallbacksMap.get(chronometerGroup);
+
+            onFail.run();
         }
-        return false;
+
+        stopInteraction(player, chronometerGroup);
     }
 
     /*
@@ -330,13 +326,13 @@ public class ItemInteraction implements Listener {
 
         if (playerCallbacksMap != null && playerChronometerMap != null) {
             Function<Location, Boolean> callback = playerCallbacksMap.get(chronometerGroup);
-            ItemStack item = playerChronometerMap.get(chronometerGroup).getItem();
-            ChronometerInfo chronoInfo = playerChronometerMap.get(chronometerGroup).getChronometerInfo();
+            ItemStack item = playerChronometerMap.get(chronometerGroup).item();
+            ChronometerInfo chronoInfo = playerChronometerMap.get(chronometerGroup).chronometerInfo();
             ItemStack oldItem = playerOldItemHand.getOrDefault(player.getUniqueId(), new HashMap<>()).remove(chronometerGroup);
 
 
             if (chronoInfo != null) {
-                Chronometer.stopChronometer(player, chronoInfo.getChronometerGroup(), null, "%null%");
+                Chronometer.stopChronometer(player, chronoInfo.chronometerGroup(), null, "%null%");
             }
 
             int slotOfItem = ItemUtils.getSlotOfItem(player, item);

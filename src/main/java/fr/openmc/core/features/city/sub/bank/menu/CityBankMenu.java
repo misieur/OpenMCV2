@@ -5,10 +5,9 @@ import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.api.menulib.utils.MenuUtils;
 import fr.openmc.core.OMCPlugin;
-import fr.openmc.core.features.city.CPermission;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
-import fr.openmc.core.features.city.menu.CityMenu;
+import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.economy.BankManager;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.utils.DateUtils;
@@ -21,7 +20,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -37,7 +35,12 @@ public class CityBankMenu extends Menu {
 
     @Override
     public @NotNull String getName() {
-        return "Menu des villes - Banque de Ville";
+        return "Menu des Villes - Banque";
+    }
+
+    @Override
+    public String getTexture() {
+        return null;
     }
 
     @Override
@@ -51,8 +54,8 @@ public class CityBankMenu extends Menu {
     }
 
     @Override
-    public @NotNull Map<Integer, ItemStack> getContent() {
-        Map<Integer, ItemStack> inventory = new HashMap<>();
+    public @NotNull Map<Integer, ItemBuilder> getContent() {
+        Map<Integer, ItemBuilder> inventory = new HashMap<>();
         Player player = getOwner();
 
         City city = CityManager.getPlayerCity(player.getUniqueId());
@@ -60,7 +63,7 @@ public class CityBankMenu extends Menu {
 
         List<Component> loreBankDeposit;
 
-        if (city.hasPermission(player.getUniqueId(), CPermission.MONEY_GIVE)) {
+        if (city.hasPermission(player.getUniqueId(), CityPermission.MONEY_GIVE)) {
             loreBankDeposit = List.of(
                     Component.text("§7Votre argent sera placé dans la §6Banque de la Ville"),
                     Component.text("§e§lCLIQUEZ ICI POUR DEPOSER")
@@ -75,7 +78,7 @@ public class CityBankMenu extends Menu {
             itemMeta.itemName(Component.text("§7Déposer de l'§6Argent"));
             itemMeta.lore(loreBankDeposit);
         }).setOnClick(inventoryClickEvent -> {
-            if (!(city.hasPermission(player.getUniqueId(), CPermission.MONEY_GIVE))) {
+            if (!(city.hasPermission(player.getUniqueId(), CityPermission.MONEY_GIVE))) {
                 MessagesManager.sendMessage(player, Component.text("Tu n'as pas la permission de donner de l'argent à ta ville"), Prefix.CITY, MessageType.ERROR, false);
                 return;
             }
@@ -84,18 +87,16 @@ public class CityBankMenu extends Menu {
             menu.open();
         }));
 
-        if (city.hasPermission(player.getUniqueId(), CPermission.MONEY_BALANCE)) {
+        if (city.hasPermission(player.getUniqueId(), CityPermission.MONEY_BALANCE)) {
 
-            Supplier<ItemStack> interestItemSupplier = () -> {
-                return new ItemBuilder(this, Material.GOLD_BLOCK, itemMeta -> {
-                    itemMeta.itemName(Component.text("§6L'Argent de votre Ville"));
-                    itemMeta.lore(List.of(
-                                    Component.text("§7La ville a actuellement §d" + EconomyManager.getFormattedSimplifiedNumber(city.getBalance()) + " ").append(Component.text(EconomyManager.getEconomyIcon()).decoration(TextDecoration.ITALIC, false)),
-                            Component.text("§7Votre prochain intéret est de §b" + city.calculateCityInterest() * 100 + "% §7dans §b" + DateUtils.convertSecondToTime(BankManager.getSecondsUntilInterest()))
-                            )
-                    );
-                });
-            };
+            Supplier<ItemBuilder> interestItemSupplier = () -> new ItemBuilder(this, Material.GOLD_BLOCK, itemMeta -> {
+                itemMeta.itemName(Component.text("§6L'Argent de votre Ville"));
+                itemMeta.lore(List.of(
+                                Component.text("§7La ville a actuellement §d" + EconomyManager.getFormattedSimplifiedNumber(city.getBalance()) + " ").append(Component.text(EconomyManager.getEconomyIcon()).decoration(TextDecoration.ITALIC, false)),
+                                Component.text("§7Votre prochain intéret est de §b" + city.calculateCityInterest() * 100 + "% §7dans §b" + DateUtils.convertSecondToTime(BankManager.getSecondsUntilInterest()))
+                        )
+                );
+            });
 
             MenuUtils.runDynamicItem(player, this, 13, interestItemSupplier)
                     .runTaskTimer(OMCPlugin.getInstance(), 0L, 20L);
@@ -103,7 +104,7 @@ public class CityBankMenu extends Menu {
 
         List<Component> loreBankTake;
 
-        if (city.hasPermission(player.getUniqueId(), CPermission.MONEY_TAKE)) {
+        if (city.hasPermission(player.getUniqueId(), CityPermission.MONEY_TAKE)) {
             loreBankTake = List.of(
                     Component.text("§7L'argent sera pris dans la §6Banque de la Ville"),
                     Component.text("§e§lCLIQUEZ ICI POUR INDIQUER LE MONTANT")
@@ -118,7 +119,7 @@ public class CityBankMenu extends Menu {
             itemMeta.itemName(Component.text("§7Retirer de l'§6Argent"));
             itemMeta.lore(loreBankTake);
         }).setOnClick(inventoryClickEvent -> {
-            if (!(city.hasPermission(player.getUniqueId(), CPermission.MONEY_TAKE))) {
+            if (!(city.hasPermission(player.getUniqueId(), CityPermission.MONEY_TAKE))) {
                 MessagesManager.sendMessage(player, Component.text("Tu n'as pas la permission de prendre de l'argent à ta ville"), Prefix.CITY, MessageType.ERROR, false);
                 return;
             }
@@ -130,13 +131,11 @@ public class CityBankMenu extends Menu {
         inventory.put(18, new ItemBuilder(this, Material.ARROW, itemMeta -> {
             itemMeta.itemName(Component.text("§aRetour"));
             itemMeta.lore(List.of(
-                    Component.text("§7Vous allez retourner au menu des villes"),
+                    Component.text("§7Vous allez retourner au Menu Précédent"),
                     Component.text("§e§lCLIQUEZ ICI POUR CONFIRMER")
             ));
 
-        }).setOnClick(inventoryClickEvent -> {
-            new CityMenu(player).open();
-        }));
+        }, true));
 
         return inventory;
     }

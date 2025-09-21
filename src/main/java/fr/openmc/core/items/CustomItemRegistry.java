@@ -15,13 +15,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class CustomItemRegistry {
-    static HashMap<String, CustomItem> items = new HashMap<>();
-    static NamespacedKey customNameKey = new NamespacedKey("aywen", "custom_item");
+    static final HashMap<String, CustomItem> items = new HashMap<>();
+    static final NamespacedKey customNameKey = new NamespacedKey("aywen", "custom_item");
 
     public CustomItemRegistry() {
         CommandsManager.getHandler().register(new CustomItemsDebugCommand());
 
-        // Ici, enregistrer tous les items custom
+        // ** REGISTRER ITEMSTACK OF ITEM ADDER **
 
         /* Buttons */
         registerSimpleItem("_iainternal:icon_cancel", Material.DARK_OAK_DOOR, "Fermer");
@@ -42,8 +42,11 @@ public class CustomItemRegistry {
         registerSimpleItem("omc_contest:contest_shell", Material.NAUTILUS_SHELL);
         registerSimpleItem("omc_items:aywenite", Material.AMETHYST_SHARD);
         registerSimpleItem("omc_foods:kebab", Material.COOKED_BEEF);
+        registerSimpleItem("omc_foods:the_mixture", Material.HONEY_BOTTLE);
+        registerSimpleItem("omc_foods:courgette", Material.SEA_PICKLE);
         registerSimpleItem("omc_items:mascot_stick", Material.STICK);
         registerSimpleItem("omc_items:warp_stick", Material.STICK);
+        registerSimpleItem("omc_items:aywen_cap", Material.IRON_HELMET);
         registerSimpleItem("omc_items:suit_helmet", Material.IRON_HELMET);
         registerSimpleItem("omc_items:suit_chestplate", Material.IRON_CHESTPLATE);
         registerSimpleItem("omc_items:suit_leggings", Material.IRON_LEGGINGS);
@@ -54,6 +57,12 @@ public class CustomItemRegistry {
         registerSimpleItem("omc_homes:omc_homes_icon_information", Material.CHEST);
         registerSimpleItem("omc_homes:omc_homes_icon_upgrade", Material.CHEST);
         registerSimpleItem("omc_homes:omc_homes_invisible", Material.CHEST);
+
+        /* Blocs */
+        registerSimpleItem("omc_blocks:aywenite_block", Material.AMETHYST_BLOCK);
+        registerSimpleItem("omc_plush:peluche_seinyy", Material.PAPER);
+        registerSimpleItem("omc_plush:peluche_awyen", Material.PAPER);
+        registerSimpleItem("omc_blocks:urne", Material.GLASS);
 
         /* Homes icons */
         registerSimpleItem("omc_homes:omc_homes_icon_axenq", Material.CHEST);
@@ -68,11 +77,6 @@ public class CustomItemRegistry {
     }
 
     public static void register(String name, CustomItem item) {
-        System.out.println(items.size() + " all items:" + items.keySet());
-        if (items.containsKey(name)) {
-            throw new IllegalArgumentException("Custom item with name " + name + " already exists");
-        }
-
         if (!name.matches("[a-zA-Z0-9_:]+")) {
             throw new IllegalArgumentException("Custom item name dont match regex \"[a-zA-Z0-9_:]+\"");
         }

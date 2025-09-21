@@ -60,7 +60,7 @@ public class MenuUtils {
 	}
 
 	/**
-	 * Set a Item to be refresh.
+	 * Set an Item to be refreshed.
 	 * [ATTENTION METTRE UN NOM DIFFERENT DES AUTRES MENUS]
 	 * @param player The Player
 	 * @param menu The Menu
@@ -68,7 +68,7 @@ public class MenuUtils {
 	 * @param itemSupplier Supplier of Item
 	 * @return The ItemBuilder with the name set
 	 */
-	public static BukkitRunnable runDynamicItem(Player player, Menu menu, int slot, Supplier<ItemStack> itemSupplier) {
+	public static BukkitRunnable runDynamicItem(Player player, Menu menu, int slot, Supplier<ItemBuilder> itemSupplier) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {

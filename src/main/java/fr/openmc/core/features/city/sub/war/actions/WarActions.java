@@ -2,10 +2,11 @@ package fr.openmc.core.features.city.sub.war.actions;
 
 import fr.openmc.api.menulib.default_menu.ConfirmMenu;
 import fr.openmc.core.OMCPlugin;
-import fr.openmc.core.features.city.CPermission;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
+import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.CityType;
+import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.features.city.sub.war.WarManager;
 import fr.openmc.core.features.city.sub.war.WarPendingDefense;
 import fr.openmc.core.features.city.sub.war.menu.selection.WarChooseParticipantsMenu;
@@ -38,7 +39,12 @@ public class WarActions {
         City launchCity = CityManager.getPlayerCity(launcherUUID);
 
         if (launchCity == null) {
-            MessagesManager.sendMessage(player, MessagesManager.Message.PLAYERNOCITY.getMessage(), Prefix.CITY, MessageType.ERROR, false);
+            MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_NO_CITY.getMessage(), Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
+        if (!FeaturesRewards.hasUnlockFeature(launchCity, FeaturesRewards.Feature.WAR)) {
+            MessagesManager.sendMessage(player, Component.text("Vous n'avez pas débloqué cette Feature ! Veuillez Améliorer votre Ville au niveau " + FeaturesRewards.getFeatureUnlockLevel(FeaturesRewards.Feature.WAR) + "!"), Prefix.CITY, MessageType.ERROR, false);
             return;
         }
 
@@ -56,9 +62,16 @@ public class WarActions {
             return;
         }
 
-        if (!launchCity.hasPermission(player.getUniqueId(), CPermission.LAUNCH_WAR)) {
+        if (!launchCity.hasPermission(player.getUniqueId(), CityPermission.LAUNCH_WAR)) {
             MessagesManager.sendMessage(player,
                     Component.text("Vous n'avez pas la permission de lancer une guerre pour la ville"),
+                    Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
+        if (WarManager.getPendingDefenseFor(launchCity) != null) {
+            MessagesManager.sendMessage(player,
+                    Component.text("Vous avez déjà été déclaré en guerre !"),
                     Prefix.CITY, MessageType.ERROR, false);
             return;
         }
@@ -66,6 +79,13 @@ public class WarActions {
         if (launchCity.isInWar()) {
             MessagesManager.sendMessage(player,
                     Component.text("Votre ville est en déjà en guerre!"),
+                    Prefix.CITY, MessageType.ERROR, false);
+            return;
+        }
+
+        if (WarManager.getPendingDefenseFor(cityAttack) != null) {
+            MessagesManager.sendMessage(player,
+                    Component.text("La ville que vous essayez d'attaquer et déjà en préparation des troupes"),
                     Prefix.CITY, MessageType.ERROR, false);
             return;
         }
@@ -152,9 +172,7 @@ public class WarActions {
                     finishLaunchWar(player, cityLaunch, cityAttack, attackers);
                     player.closeInventory();
                 },
-                () -> {
-                    player.closeInventory();
-                },
+                player::closeInventory,
                 List.of(
                         Component.text("§c§lATTENTION"),
                         Component.text("§7Vous êtes sur le point de lancer une guerre contre §c" + cityAttack.getName()),
@@ -229,7 +247,7 @@ public class WarActions {
      * @param cityAttack        The city being attacked.
      * @param attackers         The list of UUIDs of players from the launching city who will participate in the war.
      * @param allDefenders      The list of UUIDs of all potential defenders from the defending city.
-     * @param requiredParticipants The number of defenders required to start the war.
+     * @param requiredParticipants The number of defenders required starting the war.
      * @param pending           The pending defense object containing information about the war.
      */
     public static void launchWar(City cityLaunch, City cityAttack, List<UUID> attackers, List<UUID> allDefenders, int requiredParticipants, WarPendingDefense pending) {
