@@ -13,8 +13,7 @@ import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class PacketListener extends PacketAdapter {
     @Getter

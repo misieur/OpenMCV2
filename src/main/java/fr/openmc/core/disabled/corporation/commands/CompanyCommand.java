@@ -1,5 +1,7 @@
 package fr.openmc.core.disabled.corporation.commands;
 
+import fr.openmc.core.features.city.City;
+import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.disabled.corporation.CorpPermission;
 import fr.openmc.core.disabled.corporation.MethodState;
 import fr.openmc.core.disabled.corporation.company.Company;
@@ -9,8 +11,6 @@ import fr.openmc.core.disabled.corporation.manager.PlayerShopManager;
 import fr.openmc.core.disabled.corporation.menu.company.CompanyBaltopMenu;
 import fr.openmc.core.disabled.corporation.menu.company.CompanyMenu;
 import fr.openmc.core.disabled.corporation.menu.company.CompanySearchMenu;
-import fr.openmc.core.features.city.City;
-import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;

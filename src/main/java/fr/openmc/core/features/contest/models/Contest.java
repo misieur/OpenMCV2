@@ -1,11 +1,12 @@
 package fr.openmc.core.features.contest.models;
 
-import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.table.DatabaseTable;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Objects;
+
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
 
 @Getter
 @DatabaseTable(tableName = "contests")

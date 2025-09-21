@@ -12,6 +12,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.UUID;
+
 public class MascotImmuneListener implements Listener {
 
     @EventHandler
