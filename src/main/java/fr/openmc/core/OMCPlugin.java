@@ -98,7 +98,6 @@ public class OMCPlugin extends JavaPlugin {
         logLoadMessage();
 
         new ErrorReporter();
-        getLogger().info("\u001B[32m✔ ErrorHandler activé\u001B[0m");
 
         /* MANAGERS */
         TicketManager.loadPlayerStats(new File(this.getDataFolder(), "data/stats"));
