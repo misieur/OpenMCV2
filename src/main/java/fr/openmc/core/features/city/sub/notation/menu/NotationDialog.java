@@ -44,11 +44,7 @@ public class NotationDialog {
         body.add(lineCityNotationHeader(CityManager.getPlayerCity(player.getUniqueId()), weekStr));
 
         for (CityNotation notation : NotationManager.getSortedNotationForWeek(weekStr)) {
-            City city = CityManager.getCity(notation.getCityUUID());
-
-            if (city == null) continue;
-
-            body.add(lineCityNotation(city, weekStr));
+            body.add(lineCityNotation(CityManager.getCity(notation.getCityUUID()), weekStr));
         }
 
         Dialog dialog = Dialog.create(builder -> builder.empty()
@@ -73,17 +69,16 @@ public class NotationDialog {
         Component header = Component.text(PaddingUtils.format("Ville", MAX_LENGTH_CITY)).append(Component.text(" | "))
                 .append(Component.text(PaddingUtils.format("Activ.", 8)).hoverEvent(getHoverActivity())).append(Component.text(" | "))
                 .append(Component.text(PaddingUtils.format("Econo.", LENGTH_CASE)).hoverEvent(getHoverEconomy())).append(Component.text(" | "))
-                .append(Component.text(PaddingUtils.format("Milit.", LENGTH_CASE)).hoverEvent(getHoverMilitary())).append(Component.text(" | "))
                 .append(Component.text(PaddingUtils.format("Arch.", LENGTH_CASE)).hoverEvent(getHoverArchitectural())).append(Component.text(" | "))
                 .append(Component.text(PaddingUtils.format("Coh.", LENGTH_CASE)).hoverEvent(getHoverCoherence())).append(Component.text(" | "))
-                .append(Component.text(PaddingUtils.format("Total", LENGTH_CASE)).hoverEvent(getHoverTotal(city == null ? null : city.getNotationOfWeek(weekStr)))).append(Component.text(" | "))
+                .append(Component.text(PaddingUtils.format("Total", LENGTH_CASE)).hoverEvent(getHoverTotal(city.getNotationOfWeek(weekStr)))).append(Component.text(" | "))
                 .append(Component.text(PaddingUtils.format("Argent", LENGTH_CASE)));
 
         header.font(Key.key(FONT));
 
         return DialogBody.plainMessage(
                 header,
-                1000
+                600
         );
     }
 
@@ -107,7 +102,6 @@ public class NotationDialog {
         if (notation != null) {
             String activity = String.format("%.2f/" + NotationNote.NOTE_ACTIVITY.getMaxNote(), notation.getNoteActivity());
             String eco = String.format("%.2f/" + NotationNote.NOTE_PIB.getMaxNote(), notation.getNoteEconomy());
-            String military = String.format("%.2f/" + NotationNote.NOTE_MILITARY.getMaxNote(), notation.getNoteMilitary());
             String arch = String.format("%.2f/" + NotationNote.NOTE_ARCHITECTURAL.getMaxNote(), notation.getNoteArchitectural());
             String coh = String.format("%.2f/" + NotationNote.NOTE_COHERENCE.getMaxNote(), notation.getNoteCoherence());
             String total = String.format("%.2f/%.0f", notation.getTotalNote(), NotationNote.getMaxTotalNote());
@@ -124,13 +118,11 @@ public class NotationDialog {
                     .append(Component.text(" | "))
                     .append(Component.text(PaddingUtils.format(eco, LENGTH_CASE)).hoverEvent(getHoverEconomy()))
                     .append(Component.text(" | "))
-                    .append(Component.text(PaddingUtils.format(military, LENGTH_CASE)).hoverEvent(getHoverMilitary()))
-                    .append(Component.text(" | "))
                     .append(Component.text(PaddingUtils.format(arch, LENGTH_CASE)).hoverEvent(getHoverArchitectural()))
                     .append(Component.text(" | "))
                     .append(Component.text(PaddingUtils.format(coh, LENGTH_CASE)).hoverEvent(getHoverCoherence()))
                     .append(Component.text(" | "))
-                    .append(Component.text(PaddingUtils.format(total, LENGTH_CASE)).hoverEvent(getHoverTotal(city == null ? null : city.getNotationOfWeek(weekStr))))
+                    .append(Component.text(PaddingUtils.format(total, LENGTH_CASE)).hoverEvent(getHoverTotal(city.getNotationOfWeek(weekStr))))
                     .append(Component.text(" | "))
                     .append(Component.text("§6 +" + PaddingUtils.format(money, LENGTH_CASE)));
 
@@ -142,22 +134,16 @@ public class NotationDialog {
 
         return DialogBody.plainMessage(
                 base,
-                1000
+                500
         );
     }
 
     public static Component getHoverTotal(CityNotation notation) {
-        if (notation == null) {
-            return Component.text("Aucun Total pour vous");
-        }
-
         return Component.text("§6§lDétails")
                 .appendNewline()
                 .append(Component.text("§8Activité " + notation.getNoteActivity()))
                 .appendNewline()
                 .append(Component.text("§8Economie " + notation.getNoteEconomy()))
-                .appendNewline()
-                .append(Component.text("§8Militaire " + notation.getNoteMilitary()))
                 .appendNewline()
                 .append(Component.text("§8Architecture " + notation.getNoteArchitectural()))
                 .appendNewline()
@@ -177,12 +163,6 @@ public class NotationDialog {
 
     public static Component getHoverEconomy() {
         return Component.text("Note qui comprends, la richesse de la ville et le PIB par habitant de la ville.")
-                .appendNewline()
-                .append(Component.text("Note sur §3" + NotationNote.NOTE_PIB.getMaxNote() + " §fpoints"));
-    }
-
-    public static Component getHoverMilitary() {
-        return Component.text("Note qui se base en fonction de votre nombre de point de puissance. Gagnable via des Guerres")
                 .appendNewline()
                 .append(Component.text("Note sur §3" + NotationNote.NOTE_PIB.getMaxNote() + " §fpoints"));
     }

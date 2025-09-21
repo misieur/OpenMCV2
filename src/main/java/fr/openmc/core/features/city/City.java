@@ -5,21 +5,22 @@ import fr.openmc.core.OMCPlugin;
 import fr.openmc.core.features.city.events.*;
 import fr.openmc.core.features.city.models.DBCity;
 import fr.openmc.core.features.city.models.DBCityRank;
-import fr.openmc.core.features.city.sub.bank.CityBankManager;
 import fr.openmc.core.features.city.sub.mascots.MascotsManager;
 import fr.openmc.core.features.city.sub.mascots.models.Mascot;
 import fr.openmc.core.features.city.sub.mayor.ElectionType;
 import fr.openmc.core.features.city.sub.mayor.managers.MayorManager;
+import fr.openmc.core.features.city.sub.mayor.managers.PerkManager;
 import fr.openmc.core.features.city.sub.mayor.models.CityLaw;
 import fr.openmc.core.features.city.sub.mayor.models.Mayor;
-import fr.openmc.core.features.city.sub.milestone.rewards.RankLimitRewards;
+import fr.openmc.core.features.city.sub.mayor.perks.Perks;
 import fr.openmc.core.features.city.sub.notation.NotationManager;
 import fr.openmc.core.features.city.sub.notation.models.CityNotation;
-import fr.openmc.core.features.city.sub.rank.CityRankManager;
 import fr.openmc.core.features.city.sub.war.War;
 import fr.openmc.core.features.city.sub.war.WarManager;
+import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.utils.CacheOfflinePlayer;
 import fr.openmc.core.utils.ChunkPos;
+import fr.openmc.core.utils.InputUtils;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
 import fr.openmc.core.utils.messages.Prefix;
@@ -38,9 +39,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static fr.openmc.core.features.city.CityManager.citiesByName;
-import static fr.openmc.core.features.city.actions.CityCreateAction.FREE_CLAIMS;
 
 public class City {
     @Getter
@@ -62,8 +60,8 @@ public class City {
     private int powerPoints;
     @Getter
     private int freeClaims;
-    @Getter
-    private int level;
+    
+    public static final int MAX_RANKS = 18; // Maximum number of ranks allowed in a city
 
     /**
      * Constructor used for City creation
@@ -72,8 +70,7 @@ public class City {
         this.uniqueId = uniqueId;
         this.name = name;
         this.type = type;
-        this.freeClaims = FREE_CLAIMS;
-        this.level = 1;
+        this.freeClaims = 15;
 
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () ->
                 CityManager.saveCity(this)
@@ -92,7 +89,7 @@ public class City {
         addPlayer(owner.getUniqueId());
         addPermission(owner.getUniqueId(), CityPermission.OWNER);
         saveChestContent(1, null);
-        CityRankManager.loadCityRanks(this);
+        CityManager.loadCityRanks(this);
 
         Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () ->
                 Bukkit.getPluginManager().callEvent(new CityCreationEvent(this, owner))
@@ -100,16 +97,15 @@ public class City {
     }
 
     /**
-     * Constructor used to deserialize a City database object
+     * Constructor used to deserialize City database object
      */
-    public City(UUID uniqueId, String name, double balance, String type, int power, int freeClaims, int level) {
+    public City(UUID uniqueId, String name, double balance, String type, int power, int freeClaims) {
         this.uniqueId = uniqueId;
         this.name = name;
         this.balance = balance;
         this.freeClaims = freeClaims;
         this.powerPoints = power;
         this.type = CityType.valueOf(type.toUpperCase());
-        this.level = level;
 
         CityManager.registerCity(this);
     }
@@ -118,7 +114,7 @@ public class City {
      * Serialize a city to be saved in the database
      */
     public DBCity serialize() {
-        return new DBCity(uniqueId, name, balance, type.name(), powerPoints, freeClaims, level);
+        return new DBCity(uniqueId, name, balance, type.name(), powerPoints, freeClaims);
     }
 
     // ==================== Global Methods ====================
@@ -144,10 +140,6 @@ public class City {
     }
 
     public void rename(String newName) {
-
-        citiesByName.remove(name);
-        citiesByName.put(newName, this);
-
         this.name = newName;
 
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () ->
@@ -356,20 +348,15 @@ public class City {
      * @param value The new balance value to be set.
      */
     public void setBalance(double value) {
-        double before = this.balance;
-        this.balance = value;
-
-        // Sauvegarde async
+        double before = balance;
+        balance = value;
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () ->
                 CityManager.saveCity(this)
         );
-
-        // Event sync
         Bukkit.getScheduler().runTask(OMCPlugin.getInstance(), () ->
-                Bukkit.getPluginManager().callEvent(new CityMoneyUpdateEvent(this, before, this.balance))
+                Bukkit.getPluginManager().callEvent(new CityMoneyUpdateEvent(this, before, balance))
         );
     }
-
 
     /**
      * Updates the balance for a given City by adding a difference amount and
@@ -388,7 +375,23 @@ public class City {
      * @param input  The input string to get the money value
      */
     public void depositCityBank(Player player, String input) {
-        CityBankManager.depositCityBank(this, player, input);
+        if (InputUtils.isInputMoney(input)) {
+            double moneyDeposit = InputUtils.convertToMoneyValue(input);
+
+            if (EconomyManager.withdrawBalance(player.getUniqueId(), moneyDeposit)) {
+                updateBalance(moneyDeposit);
+                MessagesManager.sendMessage(player,
+                        Component.text("Tu as transféré §d" + EconomyManager.getFormattedSimplifiedNumber(moneyDeposit)
+                                + "§r" + EconomyManager.getEconomyIcon() + " à ta ville"),
+                        Prefix.CITY, MessageType.ERROR, false);
+            } else {
+                MessagesManager.sendMessage(player, MessagesManager.Message.PLAYER_MISSING_MONEY.getMessage(),
+                        Prefix.CITY, MessageType.ERROR, false);
+            }
+        } else {
+            MessagesManager.sendMessage(player, Component.text("Veuillez mettre une entrée correcte"), Prefix.CITY,
+                    MessageType.ERROR, true);
+        }
     }
 
     /**
@@ -398,24 +401,51 @@ public class City {
      * @param input  The input string to get the money value
      */
     public void withdrawCityBank(Player player, String input) {
-        CityBankManager.withdrawCityBank(this, player, input);
+        if (InputUtils.isInputMoney(input)) {
+            double moneyDeposit = InputUtils.convertToMoneyValue(input);
+
+            if (getBalance() < moneyDeposit) {
+                MessagesManager.sendMessage(player, Component.text("Ta ville n'a pas assez d'argent en banque"),
+                        Prefix.CITY, MessageType.ERROR, false);
+            } else {
+                updateBalance(-moneyDeposit);
+                EconomyManager.addBalance(player.getUniqueId(), moneyDeposit);
+                MessagesManager.sendMessage(player,
+                        Component.text("§d" + EconomyManager.getFormattedSimplifiedNumber(moneyDeposit) + "§r"
+                                + EconomyManager.getEconomyIcon() + " ont été transférés à votre compte"),
+                        Prefix.CITY, MessageType.SUCCESS, false);
+            }
+        } else {
+            MessagesManager.sendMessage(player, Component.text("Veuillez mettre une entrée correcte"), Prefix.CITY,
+                    MessageType.ERROR, true);
+        }
     }
 
     /**
      * Calculates the interest for the city
-     * Interests calculated as proportion not percentage (e.g.: 0.01 = 1%)
+     * Interests calculated as proportion not percentage (eg: 0.01 = 1%)
      *
      * @return The calculated interest as a double.
      */
     public double calculateCityInterest() {
-        return CityBankManager.calculateCityInterest(this);
+        double interest = .01; // base interest is 1%
+
+        if (MayorManager.phaseMayor == 2) {
+            if (PerkManager.hasPerk(getMayor(), Perks.BUSINESS_MAN.getId())) {
+                interest = .03; // interest is 3% when perk Business Man enabled
+            }
+        }
+
+        return interest;
     }
 
     /**
      * Applies the interest to the city balance and updates it in the database.
      */
     public void applyCityInterest() {
-        CityBankManager.applyCityInterest(this);
+        double interest = calculateCityInterest();
+        double amount = getBalance() * interest;
+        updateBalance(amount);
     }
 
     // ==================== Permissions Methods ====================
@@ -602,9 +632,7 @@ public class City {
      * @return True if the city is immune, false otherwise.
      */
     public boolean isImmune() {
-        if (this.getMascot() == null) return false;
-
-        return this.getMascot().isImmunity() && !DynamicCooldownManager.isReady(this.getUniqueId(), "city:immunity");
+        return getMascot().isImmunity() && !DynamicCooldownManager.isReady(this.getUniqueId(), "city:immunity");
     }
 
 
@@ -637,7 +665,7 @@ public class City {
      * @return True if the city ranks are full, false otherwise.
      */
     public boolean isRanksFull() {
-        return cityRanks.size() >= RankLimitRewards.getRankLimit(this.getLevel());
+        return cityRanks.size() >= MAX_RANKS;
     }
     
     public DBCityRank getRankByName(String rankName) {
@@ -694,7 +722,7 @@ public class City {
             throw new IllegalStateException("Cannot add more than 18 ranks to a city.");
         }
         cityRanks.add(rank);
-        Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> CityRankManager.addCityRank(rank));
+        Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> CityManager.addCityRank(rank));
     }
     
     /**
@@ -711,7 +739,9 @@ public class City {
             throw new IllegalArgumentException("Cannot delete the default rank (priority 0).");
         }
         cityRanks.remove(rank);
-        Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> CityRankManager.removeCityRank(rank));
+        Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> {
+            CityManager.removeCityRank(rank);
+        });
     }
     
     /**
@@ -723,7 +753,9 @@ public class City {
      */
     public void updateRank(DBCityRank oldRank, DBCityRank newRank) {
         if (cityRanks.contains(oldRank)) {
-            Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> CityRankManager.updateCityRank(newRank));
+            Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> {
+                CityManager.updateCityRank(newRank);
+            });
             cityRanks.remove(oldRank);
             cityRanks.add(newRank);
         } else {
@@ -807,10 +839,10 @@ public class City {
         
         Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () -> {
             if (currentRank != null) {
-                CityRankManager.updateCityRank(currentRank);
+                CityManager.updateCityRank(currentRank);
             }
-
-            CityRankManager.updateCityRank(newRank);
+            
+            CityManager.updateCityRank(newRank);
         });
     }
 
@@ -842,12 +874,5 @@ public class City {
      */
     public void setNotationOfWeek(String weekStr, double architecturalNote, double coherenceNote, String description) {
         NotationManager.createOrUpdateNotation(new CityNotation(this.getUniqueId(), architecturalNote, coherenceNote, description, weekStr));
-    }
-
-    public void setLevel(int newLevel) {
-        this.level = newLevel;
-        Bukkit.getScheduler().runTaskAsynchronously(OMCPlugin.getInstance(), () ->
-                CityManager.saveCity(this)
-        );
     }
 }

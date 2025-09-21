@@ -14,7 +14,6 @@ import fr.openmc.core.features.settings.SettingType;
 import fr.openmc.core.utils.EnumUtils;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 
 import java.util.*;
@@ -60,21 +59,12 @@ public class MascotsSoundListener {
 
                 EntityType soundEntity = EnumUtils.match(splitedSound[1].toUpperCase(Locale.ROOT), EntityType.class);
 
-                if (soundEntity == null) {
-                    return;
-                }
-
                 for (Mascot mascot : mascotsNear) {
-                    Entity entity = mascot.getEntity();
-                    EntityType entityType = entity.getType();
+                    EntityType entityType = mascot.getEntity().getType();
 
-                    if (entityType.equals(soundEntity)
-                            || (SOUND_TO_ENTITY.containsKey(soundEntity) && SOUND_TO_ENTITY.get(soundEntity) == entityType)) {
-
-                        if (entity.getLocation().distanceSquared(location) < 1.0) {
-                            event.setCancelled(true);
-                            break;
-                        }
+                    if (entityType.equals(soundEntity) || (SOUND_TO_ENTITY.containsKey(soundEntity) && SOUND_TO_ENTITY.get(soundEntity) == entityType)) {
+                        event.setCancelled(true);
+                        break;
                     }
                 }
             }

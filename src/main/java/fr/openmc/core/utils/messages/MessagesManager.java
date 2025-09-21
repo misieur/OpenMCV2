@@ -4,7 +4,6 @@ import fr.openmc.core.features.settings.PlayerSettingsManager;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -43,17 +42,6 @@ public class MessagesManager {
 
     public static void sendMessage(CommandSender sender, Component message, Prefix prefix, MessageType type, boolean sound) {
         sendMessage(sender, message, prefix, type, 1.0F, sound);
-    }
-
-    public static void sendMessage(Player sender, Component message, Prefix prefix, MessageType type, boolean sound) {
-        sendMessage(sender, message, prefix, type, 1.0F, sound);
-    }
-
-    public static void sendMessage(OfflinePlayer sender, Component message, Prefix prefix, MessageType type, boolean sound) {
-        if (sender.isOnline()) {
-            sendMessage((Player) sender, message, prefix, type, 1.0F, sound);
-        }
-
     }
 
     /**

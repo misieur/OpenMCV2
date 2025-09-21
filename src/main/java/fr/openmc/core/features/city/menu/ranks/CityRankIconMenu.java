@@ -1,4 +1,4 @@
-package fr.openmc.core.features.city.sub.rank.menus;
+package fr.openmc.core.features.city.menu.ranks;
 
 import dev.lone.itemsadder.api.CustomStack;
 import fr.openmc.api.input.DialogInput;
@@ -116,7 +116,6 @@ public class CityRankIconMenu extends PaginatedMenu {
 			itemMeta.lore(List.of(Component.text("§7Cliquez pour saisir un mot-clé")));
 		}).setOnClick(event -> {
 			DialogInput.send(getOwner(), Component.text("Entrez le nom d'un mot clé pour l'icône"), MAX_LENGTH, input -> {
-                if (input == null) return;
 				new CityRankIconMenu(getOwner(), city, 0, rank, input).open();
 			});
 		}));

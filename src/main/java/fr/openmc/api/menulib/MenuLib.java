@@ -1,9 +1,7 @@
 package fr.openmc.api.menulib;
 
-import fr.openmc.api.menulib.default_menu.ConfirmMenu;
 import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.core.OMCPlugin;
-import fr.openmc.core.features.homes.menu.HomeDeleteConfirmMenu;
 import fr.openmc.core.utils.ItemUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -33,13 +31,6 @@ import java.util.function.Consumer;
  */
 public final class MenuLib implements Listener {
     private static final Map<Player, Deque<Menu>> menuHistory = new HashMap<>();
-
-    private static final Set<Class<? extends Menu>> ignoredMenus = new HashSet<>();
-    static {
-        ignoredMenus.add(ConfirmMenu.class);
-        ignoredMenus.add(fr.openmc.core.features.adminshop.menus.ConfirmMenu.class);
-        ignoredMenus.add(HomeDeleteConfirmMenu.class);
-    }
     @Getter
     private static NamespacedKey itemIdKey;
 
@@ -102,42 +93,22 @@ public final class MenuLib implements Listener {
     public static Menu getLastMenu(Player player) {
         Deque<Menu> history = menuHistory.get(player);
 
-        if (history == null || history.size() < 2) {
+        if (history == null || history.isEmpty() || history.size() < 2) {
             return null;
         }
 
         Iterator<Menu> iterator = history.iterator();
 
-        Menu current = iterator.next();
+        iterator.next();
 
-        while (iterator.hasNext()) {
-            Menu previous = iterator.next();
-
-            if (!ignoredMenus.contains(previous.getClass()) && !previous.getClass().equals(current.getClass())) {
-                return previous;
-            }
-        }
-
-        return null;
+        return iterator.next();
     }
 
     public static Menu popAndGetPreviousMenu(Player player) {
         Deque<Menu> history = menuHistory.get(player);
         if (history == null || history.size() < 2) return null;
-
-        Menu current = history.pop();
-
-        while (!history.isEmpty()) {
-            Menu previous = history.pop();
-
-            if (!ignoredMenus.contains(previous.getClass()) && previous != current) {
-                return previous;
-            }
-
-            current = history.pop();
-        }
-
-        return null;
+        history.pop();
+        return history.peek();
     }
 
     public static boolean hasPreviousMenu(Player player) {
@@ -186,10 +157,8 @@ public final class MenuLib implements Listener {
                 return;
 
             for (Map.Entry<ItemBuilder, Consumer<InventoryClickEvent>> entry : itemClickEvents.entrySet()) {
-                if (ItemUtils.isSimilarMenu(entry.getKey(), e.getCurrentItem())) {
+                if (ItemUtils.isSimilar(entry.getKey(), e.getCurrentItem()))
                     entry.getValue().accept(e);
-                }
-
             }
         } catch (Exception ex) {
             OMCPlugin.getInstance().getSLF4JLogger().error("An error occurred while handling a click event in a menu: {}", ex.getMessage(), ex);

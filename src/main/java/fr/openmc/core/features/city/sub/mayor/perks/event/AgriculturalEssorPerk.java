@@ -93,9 +93,8 @@ public class AgriculturalEssorPerk implements Listener {
             }
         }
     }
-    
-    
-    // Problème avec ItemsAdder, il ne détecte pas quand on casse une CustomCrop
+
+    // probleme avec item adder, il ne detecte pas quand on casse une CustomCrop
 //    @EventHandler
 //    public void onCustomCropBreak(CustomBlockBreakEvent event) {
 //        if (MayorManager.phaseMayor != 2) return;

@@ -60,7 +60,7 @@ public class MenuUtils {
 	}
 
 	/**
-	 * Set an Item to be refreshed.
+	 * Set a Item to be refresh.
 	 * [ATTENTION METTRE UN NOM DIFFERENT DES AUTRES MENUS]
 	 * @param player The Player
 	 * @param menu The Menu

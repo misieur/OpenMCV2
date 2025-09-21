@@ -30,10 +30,6 @@ import java.util.function.Consumer;
 public class ItemBuilder extends ItemStack {
 	private final Menu itemMenu;
 	@Getter
-	private boolean previousButton;
-	@Getter
-	private boolean nextButton;
-	@Getter
 	private boolean backButton;
 	private ItemMeta meta;
 
@@ -251,9 +247,6 @@ public class ItemBuilder extends ItemStack {
 				}
 			};
 			setOnClick(clickEventConsumer);
-
-			this.nextButton = true;
-
 			return this;
 		} catch (Exception e) {
 			MessagesManager.sendMessage(itemMenu.getOwner(), Component.text("§cUne Erreur est survenue, veuillez contacter le Staff"), Prefix.OPENMC, MessageType.ERROR, false);
@@ -280,7 +273,6 @@ public class ItemBuilder extends ItemStack {
 				}
 			};
 			setOnClick(clickEventConsumer);
-			this.previousButton = true;
 			return this;
 		} catch (Exception e) {
 			itemMenu.getOwner().closeInventory();
@@ -300,8 +292,6 @@ public class ItemBuilder extends ItemStack {
 	 */
 	@SuppressWarnings("UnstableApiUsage")
     public ItemBuilder hide(DataComponentType... typesToHide) {
-		if (typesToHide == null) return this;
-
 		if (this.hasData(DataComponentTypes.TOOLTIP_DISPLAY) && this.getData(DataComponentTypes.TOOLTIP_DISPLAY).hideTooltip())
 			return this;
 
@@ -322,8 +312,6 @@ public class ItemBuilder extends ItemStack {
 	 */
 	@SuppressWarnings("UnstableApiUsage")
 	public ItemBuilder hideTooltip(boolean hideTooltip) {
-		if (this.getType().equals(Material.AIR)) return this;
-
 		TooltipDisplay tooltipDisplay = TooltipDisplay.tooltipDisplay().hideTooltip(hideTooltip).build();
 		this.setData(DataComponentTypes.TOOLTIP_DISPLAY, tooltipDisplay);
 

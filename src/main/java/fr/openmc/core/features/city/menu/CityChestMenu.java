@@ -9,7 +9,6 @@ import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.actions.CityChestAction;
-import fr.openmc.core.features.city.sub.milestone.rewards.ChestPageLimitRewards;
 import fr.openmc.core.features.economy.EconomyManager;
 import fr.openmc.core.items.CustomItemRegistry;
 import lombok.Getter;
@@ -131,22 +130,16 @@ public class CityChestMenu extends PaginatedMenu {
             }));
         }
 
-        List<Component> loreUpgrade = new ArrayList<>(List.of(
-                Component.text("§7Votre ville doit avoir : "),
-                Component.text("§8- §6" + city.getChestPages() * UPGRADE_PER_MONEY).append(Component.text(EconomyManager.getEconomyIcon())).decoration(TextDecoration.ITALIC, false),
-                Component.text("§8- §d" + city.getChestPages() * UPGRADE_PER_AYWENITE + " d'Aywenite"),
-                Component.empty()
-        ));
-        if (city.getChestPages() >= ChestPageLimitRewards.getChestPageLimit(city.getLevel())) {
-            loreUpgrade.add(Component.text("§cLimite Atteinte"));
-        } else {
-            loreUpgrade.add(Component.text("§e§lCLIQUEZ ICI POUR AMELIORER LE COFFRE"));
-        }
-
-        if (city.hasPermission(getOwner().getUniqueId(), CityPermission.CHEST_UPGRADE) && city.getChestPages() < ChestPageLimitRewards.getChestPageLimit(city.getLevel())) {
+        if (city.hasPermission(getOwner().getUniqueId(), CityPermission.CHEST_UPGRADE) && city.getChestPages() < 5) {
             map.put(47, new ItemBuilder(this, Material.ENDER_CHEST, itemMeta -> {
                 itemMeta.displayName(Component.text("§aAméliorer le coffre"));
-                itemMeta.lore(loreUpgrade);
+                itemMeta.lore(List.of(
+                        Component.text("§7Votre ville doit avoir : "),
+                        Component.text("§8- §6" + city.getChestPages() * UPGRADE_PER_MONEY).append(Component.text(EconomyManager.getEconomyIcon())).decoration(TextDecoration.ITALIC, false),
+                        Component.text("§8- §d" + city.getChestPages() * UPGRADE_PER_AYWENITE + " d'Aywenite"),
+                        Component.empty(),
+                        Component.text("§e§lCLIQUEZ ICI POUR AMELIORER LE COFFRE")
+                ));
             }).setOnClick(inventoryClickEvent -> {
                 if (!canCityChestUpgrade(city, player)) return;
 

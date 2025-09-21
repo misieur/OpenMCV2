@@ -9,7 +9,9 @@ import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.features.city.CityPermission;
 import fr.openmc.core.features.city.sub.bank.conditions.CityBankConditions;
 import fr.openmc.core.features.economy.EconomyManager;
+import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
+import fr.openmc.core.utils.messages.Prefix;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
@@ -84,7 +86,15 @@ public class CityBankWithdrawMenu extends Menu {
             itemMeta.itemName(Component.text("§7Prendre l'§6Argent de votre Ville"));
             itemMeta.lore(loreBankWithdrawAll);
         }).setOnClick(inventoryClickEvent -> {
-            city.withdrawCityBank(player, String.valueOf(moneyBankCity));
+            if (!CityBankConditions.canCityWithdraw(city, player)) return;
+
+            if (halfMoneyBankCity != 0) {
+                city.updateBalance(moneyBankCity * -1);
+                EconomyManager.addBalance(player.getUniqueId(), moneyBankCity);
+                MessagesManager.sendMessage(player, Component.text("§d" + EconomyManager.getFormattedSimplifiedNumber(moneyBankCity) + "§r" + EconomyManager.getEconomyIcon() + " ont été transférés à votre compte"), Prefix.CITY, MessageType.SUCCESS, false);
+            } else {
+                MessagesManager.sendMessage(player, Component.text("Impossible de vous transféré l'argent, le solde de la ville est vide"), Prefix.CITY, MessageType.ERROR, false);
+            }
             player.closeInventory();
         }));
 
@@ -108,7 +118,16 @@ public class CityBankWithdrawMenu extends Menu {
             itemMeta.itemName(Component.text("§7Prendre la moitié de l'§6Argent de la Ville"));
             itemMeta.lore(loreBankWithdrawHalf);
         }).setOnClick(inventoryClickEvent -> {
-            city.withdrawCityBank(player, String.valueOf(halfMoneyBankCity));
+            if (!CityBankConditions.canCityWithdraw(city, player)) return;
+
+            if (halfMoneyBankCity != 0) {
+                city.updateBalance(halfMoneyBankCity * -1);
+                EconomyManager.addBalance(player.getUniqueId(), halfMoneyBankCity);
+                MessagesManager.sendMessage(player, Component.text("§d" + EconomyManager.getFormattedSimplifiedNumber(halfMoneyBankCity) + "§r" + EconomyManager.getEconomyIcon() + " ont été transférés à votre compte"), Prefix.CITY, MessageType.SUCCESS, false);
+            } else {
+                MessagesManager.sendMessage(player, Component.text("Impossible de vous transféré l'argent, le solde de la ville est vide"), Prefix.CITY, MessageType.ERROR, false);
+            }
+
             player.closeInventory();
         }));
 
@@ -132,10 +151,8 @@ public class CityBankWithdrawMenu extends Menu {
         }).setOnClick(inventoryClickEvent -> {
             if (!CityBankConditions.canCityWithdraw(city, player)) return;
 
-            DialogInput.send(player, Component.text("Entrez le montant que vous voulez retirer"), MAX_LENGTH, input -> {
-                        if (input == null) return;
-                        city.withdrawCityBank(player, input);
-                    }
+            DialogInput.send(player, Component.text("Entrez le montant que vous voulez retirer"), MAX_LENGTH, input ->
+                    city.withdrawCityBank(player, input)
             );
 
         }));

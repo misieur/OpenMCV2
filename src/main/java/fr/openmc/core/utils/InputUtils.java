@@ -14,19 +14,30 @@ public class InputUtils {
         // for Sonar
     }
 
+    /**
+     * Check if input was for money
+     * @param input Input of Player
+     * @return Boolean
+     */
     public static boolean isInputMoney(String input) {
         if (input == null || input.isEmpty()) {
             return false;
         }
-        String regex = "^(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)([kKmM]?)$";
+
+        String regex = "^(\\d+)([kKmM]?)$";
 
         if (!input.matches(regex)) {
             return false;
         }
 
-        String numericPart = input.replaceAll("[kKmM]", "");
+        char lastChar = input.charAt(input.length() - 1);
+        if (Character.isLetter(lastChar)) {
+            char lowerChar = Character.toLowerCase(lastChar);
+            return lowerChar == 'k' || lowerChar == 'm' ||lowerChar == 'K' || lowerChar == 'M';
+        }
+
         try {
-            double value = Double.parseDouble(numericPart);
+            long value = Long.parseLong(input);
             return value > 0;
         } catch (NumberFormatException e) {
             return false;
@@ -44,11 +55,11 @@ public class InputUtils {
             return -1;
         }
 
+        String removeKM = input.replaceAll("[kKmM]", "");
         char suffix = input.charAt(input.length() - 1);
-        String numericPart = input.replaceAll("[kKmM]", "");
 
         try {
-            double value = Double.parseDouble(numericPart);
+            double value = Double.parseDouble(removeKM);
 
             if (Character.isLetter(suffix)) {
                 char lowerChar = Character.toLowerCase(suffix);

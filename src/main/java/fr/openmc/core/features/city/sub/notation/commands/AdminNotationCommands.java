@@ -1,9 +1,7 @@
 package fr.openmc.core.features.city.sub.notation.commands;
 
 import fr.openmc.api.input.DialogInput;
-import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityManager;
-import fr.openmc.core.features.city.sub.milestone.rewards.FeaturesRewards;
 import fr.openmc.core.features.city.sub.notation.NotationManager;
 import fr.openmc.core.features.city.sub.notation.menu.NotationEditionDialog;
 import fr.openmc.core.utils.DateUtils;
@@ -14,8 +12,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
-
-import java.util.List;
 
 import static fr.openmc.core.features.city.sub.notation.NotationManager.calculateAllCityScore;
 import static fr.openmc.core.features.city.sub.notation.NotationManager.giveReward;
@@ -33,18 +29,8 @@ public class AdminNotationCommands {
                         return;
                     }
 
-                    List<City> cities = CityManager.getCities()
-                            .stream()
-                            .filter(city -> FeaturesRewards.hasUnlockFeature(city, FeaturesRewards.Feature.NOTATION))
-                            .toList();
-
-                    if (cities.isEmpty()) {
-                        MessagesManager.sendMessage(sender, Component.text("Aucune ville a éditer"), Prefix.STAFF, MessageType.ERROR, false);
-                        return;
-                    }
-
                     try {
-                        NotationEditionDialog.send(sender, weekStr, cities, null);
+                        NotationEditionDialog.send(sender, weekStr, CityManager.getCities().stream().toList(), null);
                     } catch (Exception e) {
                         MessagesManager.sendMessage(sender, Component.text("Erreur lors de l'ouverture du menu"), Prefix.STAFF, MessageType.ERROR, false);
                     }
@@ -61,11 +47,7 @@ public class AdminNotationCommands {
             return;
         }
 
-        try {
-            calculateAllCityScore(weekStr);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        calculateAllCityScore(weekStr);
 
         giveReward(weekStr);
 

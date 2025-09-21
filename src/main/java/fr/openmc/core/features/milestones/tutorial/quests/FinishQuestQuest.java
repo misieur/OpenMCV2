@@ -55,8 +55,6 @@ public class FinishQuestQuest extends Quest implements Listener {
     public void onQuestComplete(QuestCompleteEvent event) {
         Player player = event.getPlayer();
 
-        if (event.getQuest().getClass() == OpenQuestMenuQuest.class) return;
-
         if (MilestonesManager.getPlayerStep(type, player) != step.ordinal()) return;
 
         this.incrementProgress(player.getUniqueId());

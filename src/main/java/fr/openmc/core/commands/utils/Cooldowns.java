@@ -1,8 +1,6 @@
 package fr.openmc.core.commands.utils;
 
 import fr.openmc.api.cooldown.DynamicCooldownManager;
-import fr.openmc.core.features.city.City;
-import fr.openmc.core.features.city.CityManager;
 import fr.openmc.core.utils.DateUtils;
 import fr.openmc.core.utils.messages.MessageType;
 import fr.openmc.core.utils.messages.MessagesManager;
@@ -37,7 +35,6 @@ public class Cooldowns {
                 MessageType.INFO,
                 true
         );
-
         DynamicCooldownManager.getCooldowns(sender.getUniqueId()).forEach(
                 (group, cooldown) -> {
                     sender.sendMessage(
@@ -45,17 +42,5 @@ public class Cooldowns {
                     );
                 }
         );
-
-        City playerCity = CityManager.getCity(sender.getUniqueId());
-
-        if (playerCity != null) {
-            DynamicCooldownManager.getCooldowns(playerCity.getUniqueId()).forEach(
-                    (group, cooldown) -> {
-                        sender.sendMessage(
-                                Component.text("§a- " + group + " : " + DateUtils.convertMillisToTime(cooldown.getRemaining()))
-                        );
-                    }
-            );
-        }
     }
 }

@@ -42,12 +42,13 @@ public class Chronometer{
     }
 
     /**
-     * FOR "start":
+     * FOR "start" :
      * put "%sec%" in your message to display the remaining time
      * otherwise the default message will be displayed
      * the display time is in second
-     * FOR "start" / "stopAll" / "stop":
-     * if you don't want to display a message, just put "%null%"
+
+     * FOR "start" / "stopAll" / "stop" :
+     * if you don't want to display a message just put "%null%"
 
      * @param entity entity to add
      * @param group Chronometer group
@@ -55,7 +56,7 @@ public class Chronometer{
      * @param messageType display type
      * @param message to display the time
      * @param finishMessageType display type
-     * @param finishMessage message display when the chronometer ends normally
+     * @param finishMessage message display when the chronometer end normally
      */
     public static void startChronometer(Entity entity, String group, int time, ChronometerType messageType, String message, ChronometerType finishMessageType, String finishMessage) {
         UUID entityUUID = entity.getUniqueId();
@@ -110,7 +111,7 @@ public class Chronometer{
     }
 
     /**
-     * @param entity entity who is affected
+     * @param entity entity who is affect
      * @param messageType display type
      * @param message message display when the chronometer is stopped
      */
@@ -133,7 +134,7 @@ public class Chronometer{
     }
 
     /**
-     * @param entity entity who is affected
+     * @param entity entity who is affect
      * @param group Chronometer group
      * @param messageType display type
      * @param message message display when the chronometer is stopped
@@ -186,7 +187,7 @@ public class Chronometer{
     }
 
     /**
-     * @return true if the chronometer has expired
+     * @return true if chronometer has expired
      */
     public static boolean timerEnd(UUID entityUUID, String group){
         return chronometer.get(entityUUID).get(group) <= 0;

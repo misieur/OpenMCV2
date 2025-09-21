@@ -153,7 +153,7 @@ public class CityViewManager {
                 return;
 
             viewData.claims().forEach((chunkPos, city) -> {
-                showChunkBorders(player, chunkPos, city, city.equals(playerCity), player.getLocation().getBlockY() + 1);
+                showChunkBorders(player, chunkPos, city, city.equals(playerCity), player.getLocation().getBlockY());
             });
         }, 0L, VIEW_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }

@@ -98,7 +98,7 @@ public abstract class PaginatedMenu extends Menu {
 	public final @NotNull Map<Integer, ItemBuilder> getContent() {
 		Map<Integer, ItemBuilder> map = new HashMap<>();
 		for (Integer staticSlot : getStaticSlots()) {
-			map.put(staticSlot, new ItemBuilder(this, ItemUtils.createItem(" ", getBorderMaterial() == null ? Material.AIR : getBorderMaterial())).hideTooltip(true));
+			map.put(staticSlot, new ItemBuilder(this, ItemUtils.createItem(" ", getBorderMaterial() == null ? Material.AIR : getBorderMaterial())));
 		}
 		List<Integer> staticSlots = StaticSlots.removeRecurringIntegers(getStaticSlots(), getInventorySize().getSize());
 		int maxItems = getInventorySize().getSize() - staticSlots.size();
@@ -118,14 +118,7 @@ public abstract class PaginatedMenu extends Menu {
 		if (getButtons() != null) {
 			getButtons().forEach((integer, itemBuilder) -> {
 				if (staticSlots.contains(integer)) {
-					ItemBuilder newItemBuilder = new ItemBuilder(this, itemBuilder, itemBuilder.isBackButton());
-					if (itemBuilder.isPreviousButton()) {
-						newItemBuilder.setPreviousPageButton();
-					} else if (itemBuilder.isNextButton()) {
-						newItemBuilder.setNextPageButton();
-					}
-
-					map.put(integer, newItemBuilder);
+					map.put(integer, new ItemBuilder(this, itemBuilder, itemBuilder.isBackButton()));
 				}
 			});
 		}
@@ -145,15 +138,6 @@ public abstract class PaginatedMenu extends Menu {
 	public abstract @NotNull InventorySize getInventorySize();
 
 	public abstract int getSizeOfItems();
-
-	/**
-	 * Determines whether the current page is the first page in the paginated menu.
-	 *
-	 * @return {@code true} if the current page is the first page, {@code false} otherwise.
-	 */
-	public final boolean isFirstPage() {
-		return page == 0;
-	}
 
 	/**
 	 * Determines whether the current page is the last page in the paginated menu.

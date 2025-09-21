@@ -240,9 +240,7 @@ public class HomesManager {
     private static void saveHomes() {
         try {
             TableUtils.clearTable(DatabaseManager.getConnectionSource(), Home.class);
-            for (Home home : homes) {
-                homesDao.createOrUpdate(home);
-            }
+            homesDao.create(homes);
         } catch (SQLException e) {
             e.printStackTrace();
         }

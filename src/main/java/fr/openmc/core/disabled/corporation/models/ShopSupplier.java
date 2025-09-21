@@ -11,7 +11,7 @@ import lombok.Getter;
 @Getter
 public class ShopSupplier {
     @DatabaseField(id = true)
-    private UUID id; // différencie les supplier (un joueur peut avoir plusieurs suppliers)
+    private UUID id; // différencie les supplier (un joueur peut avoir plusieurs supplier)
     @DatabaseField(canBeNull = false)
     private UUID shop;
     @DatabaseField(canBeNull = false)

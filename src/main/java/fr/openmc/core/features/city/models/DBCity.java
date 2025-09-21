@@ -19,8 +19,6 @@ public class DBCity {
     @DatabaseField(canBeNull = false)
     private String type;
     @DatabaseField(canBeNull = false)
-    private int level;
-    @DatabaseField(canBeNull = false)
     private int power;
     @DatabaseField(canBeNull = false, columnName = "free_claims")
     private int freeClaims;
@@ -29,17 +27,16 @@ public class DBCity {
         // required for ORMLite
     }
 
-    public DBCity(UUID uuid, String name, double balance, String type, int power, int freeClaims, int level) {
+    public DBCity(UUID uuid, String name, double balance, String type, int power, int freeClaims) {
         this.uniqueId = uuid;
         this.name = name;
         this.balance = balance;
         this.type = type;
         this.power = power;
         this.freeClaims = freeClaims;
-        this.level = level;
     }
 
     public City deserialize() {
-        return new City(this.uniqueId, this.name, this.balance, this.type, this.power, this.freeClaims, this.level);
+        return new City(this.uniqueId, this.name, this.balance, this.type, this.power, this.freeClaims);
     }
 }

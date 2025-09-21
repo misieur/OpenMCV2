@@ -68,7 +68,6 @@ public class War {
                         §8§oPréparez vous pour le combat contre %s
                         §8§oVous avez §c§l%d minutes §8pour vous équiper.
                         §8§oVous serez en §4%d §8VS §4%d
-                        §8§oLorsque le combat commencera vous serez §4téléporter §8a votre §cMascotte.
                         §7
                         §8§m                                                     §r""",
                 cityAttacker.getName(), TIME_PREPARATION, attackers.size(), defenders.size());
@@ -158,7 +157,7 @@ public class War {
 
     /**
      * Ends the war and notifies the WarManager.
-     * This method sets the phase to END and calls the endWar method in WarManager.
+     * This method sets the phase to ENDED and calls the endWar method in WarManager.
      */
     public void end() {
         this.phase = WarPhase.ENDED;

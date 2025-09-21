@@ -10,9 +10,6 @@ public class BukkitSerializer {
     }
 
     public static ItemStack[] deserializeItemStacks(byte[] b) {
-        if (b == null || b.length == 0) {
-            return new ItemStack[0];
-        }
         return ItemStack.deserializeItemsFromBytes(b);
     }
 }

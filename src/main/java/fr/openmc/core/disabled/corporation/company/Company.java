@@ -62,8 +62,8 @@ public class Company {
         addPermission(owner.getPlayer(), CorpPermission.OWNER);
         addMerchant(owner.getPlayer(), new MerchantData());
     }
-	
-	// à revoir, je l'utilisais pour les entreprises de ville
+
+    // a revoir je l'utilisais pour les entreprises de ville
     public Company(String name, CompanyOwner owner, UUID company_uuid, boolean newMember) {
         this.name = name;
         this.owner = owner;
@@ -102,7 +102,7 @@ public class Company {
     }
 
     /**
-     * convert {@link Company} to {@link DBCompany} for a database
+     * convert {@link Company} to {@link DBCompany} for database
      *
      * @return the company to be saved to the DB
      */
@@ -226,7 +226,7 @@ public class Company {
     /**
      * get a shop by its index
      *
-     * @param shop the index uses to find a shop
+     * @param shop the index use to find a shop
      * @return A shop if found
      */
     public Shop getShop(int shop) {
@@ -241,7 +241,7 @@ public class Company {
     /**
      * create a shop in the company
      *
-     * @param playerUUID the uuid of the player who creates the shop
+     * @param playerUUID the uuid of the player who create the shop
      * @param barrel the stockage of the shop
      * @param cash the "cash register" use to open the shop menu
      * @return true or false
@@ -271,7 +271,7 @@ public class Company {
     }
 
     /**
-     * create a shop in the company without a player (use during a database load)
+     * create a shop in the company without player ( use during database load )
      *
      * @param barrel the stockage of the shop
      * @param cash the "cash register" use to open the shop menu
@@ -289,7 +289,7 @@ public class Company {
         /**
          * delete a shop in the company
          *
-         * @param player the player who earns the money
+         * @param player the player who earn the money
          * @param uuid the shop uuid
          * @return true or false
          */

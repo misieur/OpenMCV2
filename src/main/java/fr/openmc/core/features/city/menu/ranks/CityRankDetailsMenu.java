@@ -1,13 +1,12 @@
-package fr.openmc.core.features.city.sub.rank.menus;
+package fr.openmc.core.features.city.menu.ranks;
 
 import fr.openmc.api.menulib.Menu;
 import fr.openmc.api.menulib.utils.InventorySize;
 import fr.openmc.api.menulib.utils.ItemBuilder;
 import fr.openmc.core.features.city.City;
 import fr.openmc.core.features.city.CityPermission;
+import fr.openmc.core.features.city.actions.CityRankAction;
 import fr.openmc.core.features.city.models.DBCityRank;
-import fr.openmc.core.features.city.sub.milestone.rewards.RankLimitRewards;
-import fr.openmc.core.features.city.sub.rank.CityRankAction;
 import fr.openmc.core.items.CustomItemRegistry;
 import fr.openmc.core.utils.ItemUtils;
 import fr.openmc.core.utils.messages.MessageType;
@@ -175,9 +174,9 @@ public class CityRankDetailsMenu extends Menu {
 			if (!canManageRanks) return;
 
 			if (inventoryClickEvent.isLeftClick()) {
-				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() + 1) % RankLimitRewards.getRankLimit(city.getLevel()))).open();
+				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() + 1) % City.MAX_RANKS)).open();
 			} else if (inventoryClickEvent.isRightClick()) {
-				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() - 1 + RankLimitRewards.getRankLimit(city.getLevel())) % RankLimitRewards.getRankLimit(city.getLevel()))).open();
+				new CityRankDetailsMenu(getOwner(), city, rank.withPriority((rank.getPriority() - 1 + City.MAX_RANKS) % City.MAX_RANKS)).open();
 			}
 		}));
 

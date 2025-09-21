@@ -23,9 +23,7 @@ import java.util.UUID;
 @DatabaseTable(tableName = "homes")
 public class Home {
 
-    @DatabaseField(id = true, canBeNull = false, unique = true, columnName = "home_uuid")
-    private UUID uniqueId;
-    @DatabaseField(canBeNull = false)
+    @DatabaseField(id = true)
     private UUID owner;
     @Setter
     @DatabaseField(canBeNull = false)
@@ -52,16 +50,15 @@ public class Home {
         // required for ORMLite
     }
 
-    public Home(UUID uniqueId, UUID owner, String name, Location location, HomeIcon icon) {
-        this.uniqueId = uniqueId;
+    public Home(UUID owner, String name, Location location, HomeIcon icon) {
         this.owner = owner;
         this.name = name;
         setLocation(location);
         this.iconId = icon.getSaveId();
     }
 
-    public Home(UUID uniqueId, UUID owner, String name, Location location, OldHomeIcon legacyIcon) {
-        this(uniqueId, owner, name, location, HomeIconRegistry.fromLegacyHomeIcon(legacyIcon));
+    public Home(UUID owner, String name, Location location, OldHomeIcon legacyIcon) {
+        this(owner, name, location, HomeIconRegistry.fromLegacyHomeIcon(legacyIcon));
     }
 
     public Location getLocation() {
@@ -130,8 +127,7 @@ public class Home {
     @Override
     public String toString() {
         return "Home{" +
-                "uniqueId=" + uniqueId +
-                ", owner=" + owner +
+                "owner=" + owner +
                 ", name='" + name + '\'' +
                 ", location=" + serializeLocation() +
                 ", icon=" + iconId +
