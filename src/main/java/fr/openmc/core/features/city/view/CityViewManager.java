@@ -152,9 +152,7 @@ public class CityViewManager {
             if (viewData == null)
                 return;
 
-            viewData.claims().forEach((chunkPos, city) -> {
-                showChunkBorders(player, chunkPos, city, city.equals(playerCity), player.getLocation().getBlockY() + 1);
-            });
+            viewData.claims().forEach((chunkPos, city) -> showChunkBorders(player, chunkPos, city, city.equals(playerCity), player.getLocation().getBlockY() + 1));
         }, 0L, VIEW_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
@@ -190,7 +188,7 @@ public class CityViewManager {
         List<Packet<? super ClientGamePacketListener>> particlePackets = new ArrayList<>();
         ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
         particleLocations.forEach(location ->
-                particlePackets.add(ParticleUtils.getParticlePacket(particle, location, 1, 0D, 0D, 0D, 0D, data))
+                particlePackets.add(ParticleUtils.createParticlePacket(particle, location, 1, 0D, 0D, 0D, 0D, data))
         );
         nmsPlayer.connection.send(new ClientboundBundlePacket(particlePackets));
     }

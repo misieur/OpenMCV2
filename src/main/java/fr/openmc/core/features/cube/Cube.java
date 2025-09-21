@@ -154,7 +154,7 @@ public class Cube extends MultiBlock {
 
             for (int j = 1; j <= shockRadius; j++) {
                 Location point = center.clone().add(dir.clone().multiply(j));
-                particlePackets.add(ParticleUtils.getParticlePacket(
+                particlePackets.add(ParticleUtils.createParticlePacket(
                         Particle.ELECTRIC_SPARK,
                         point,
                         2,
@@ -176,7 +176,7 @@ public class Cube extends MultiBlock {
                         powerable.setPowered(!powerable.isPowered());
                         block.setBlockData(powerable, true);
 
-                        particlePackets.add(ParticleUtils.getParticlePacket(
+                        particlePackets.add(ParticleUtils.createParticlePacket(
                                 Particle.ELECTRIC_SPARK,
                                 loc.add(0.5, 0.5, 0.5),
                                 8,
@@ -189,7 +189,7 @@ public class Cube extends MultiBlock {
                     if (data instanceof Lightable lightable && data instanceof Powerable) {
                         lightable.setLit(!lightable.isLit());
                         block.setBlockData(lightable, true);
-                        particlePackets.add(ParticleUtils.getParticlePacket(
+                        particlePackets.add(ParticleUtils.createParticlePacket(
                                 Particle.ELECTRIC_SPARK,
                                 loc.add(0.5, 0.5, 0.5),
                                 8,
@@ -205,7 +205,7 @@ public class Cube extends MultiBlock {
         int shockRadiusSq = shockRadius * shockRadius;
         for (Player player : world.getPlayers()) {
             if (player.getLocation().distanceSquared(this.getCenter()) <= shockRadiusSq) {
-                particlePackets.add(ParticleUtils.getParticlePacket(
+                particlePackets.add(ParticleUtils.createParticlePacket(
                         Particle.ELECTRIC_SPARK,
                         player.getLocation().add(0, 1, 0),
                         5,
@@ -289,7 +289,7 @@ public class Cube extends MultiBlock {
                 double z = radius * Math.sin(phi) * Math.sin(theta);
 
                 Location particleLoc = center.clone().add(x, y, z);
-                particlePackets.add(ParticleUtils.getParticlePacket(
+                particlePackets.add(ParticleUtils.createParticlePacket(
                         Particle.OMINOUS_SPAWNING,
                         particleLoc,
                         1,
@@ -308,7 +308,7 @@ public class Cube extends MultiBlock {
                     Location particleLoc = center.clone().add(x, y, z);
 
                     Vector dir = center.clone().subtract(particleLoc).toVector().normalize();
-                    particlePackets.add(ParticleUtils.getParticlePacket(
+                    particlePackets.add(ParticleUtils.createParticlePacket(
                             Particle.SNEEZE,
                             particleLoc,
                             1,

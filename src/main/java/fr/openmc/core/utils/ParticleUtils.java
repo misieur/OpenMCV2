@@ -26,8 +26,6 @@ import java.util.List;
 
 public class ParticleUtils {
 
-    private static final double MAX_PARTICLE_DISTANCE_SQR = 100 * 100;
-
     public static Color color1;
     public static Color color2;
 
@@ -43,7 +41,6 @@ public class ParticleUtils {
 
         Location minLocation = new Location(world, min.x(), minHeight, min.z());
         Location maxLocation = new Location(world, max.x(), maxHeight, max.z());
-        Location center = minLocation.clone().add(maxLocation).multiply(0.5);
 
         new BukkitRunnable() {
             @Override
@@ -65,7 +62,7 @@ public class ParticleUtils {
 
                     Location particleLocation = new Location(world, x, y, z);
 
-                    particlePackets.add(getParticlePacket(particle, particleLocation));
+                    particlePackets.add(createParticlePacket(particle, particleLocation));
                 }
 
                 ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(particlePackets);
@@ -74,7 +71,7 @@ public class ParticleUtils {
         }.runTaskTimerAsynchronously(OMCPlugin.getInstance(), 0L, 2L);
     }
 
-    public static ClientboundLevelParticlesPacket getParticlePacket(Particle particle, Location loc) {
+    public static ClientboundLevelParticlesPacket createParticlePacket(Particle particle, Location loc) {
         return new ClientboundLevelParticlesPacket(
                 CraftParticle.createParticleParam(particle, null),
                 false,
@@ -86,7 +83,7 @@ public class ParticleUtils {
         );
     }
 
-    public static <T> ClientboundLevelParticlesPacket getParticlePacket(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, T data) {
+    public static <T> ClientboundLevelParticlesPacket createParticlePacket(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, T data) {
         return new ClientboundLevelParticlesPacket(
                 CraftParticle.createParticleParam(particle, data),
                 false,
