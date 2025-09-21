@@ -72,15 +72,7 @@ public class ParticleUtils {
     }
 
     public static ClientboundLevelParticlesPacket createParticlePacket(Particle particle, Location loc) {
-        return new ClientboundLevelParticlesPacket(
-                CraftParticle.createParticleParam(particle, null),
-                false,
-                false,
-                loc.getX(), loc.getY(), loc.getZ(),
-                0.2f, 0.2f, 0.2f,
-                0.01f,
-                3
-        );
+        return createParticlePacket(particle, loc, 3, 0.2f, 0.2f, 0.2f, 0.01f, null);
     }
 
     public static <T> ClientboundLevelParticlesPacket createParticlePacket(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double speed, T data) {
