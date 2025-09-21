@@ -84,7 +84,7 @@ public class PacketListener extends PacketAdapter {
                 PacketMenuLib.getOpenMenus().get(uuid).onInventoryClose(new InventoryCloseEvent(player));
                 PacketMenuLib.getOpenMenus().remove(uuid);
                 PacketMenuLib.updateInv(Objects.requireNonNull(player));
-            } // We don't verify if it's the good window id because if we do the player can close the inventory without packet and the event will never be called
+            } // We don't verify if it is a good window id because if we do, the player can close the inventory without a packet and the event will never be called
         }
     }
 }
