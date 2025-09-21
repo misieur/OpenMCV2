@@ -13,7 +13,12 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBundlePacket;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -182,17 +187,12 @@ public class CityViewManager {
 
         Particle particle = isPlayerCity ? Particle.CHERRY_LEAVES : Particle.TINTED_LEAVES;
         Object data = isPlayerCity ? null : Color.RED;
+        List<Packet<? super ClientGamePacketListener>> particlePackets = new ArrayList<>();
+        ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
         particleLocations.forEach(location ->
-                ParticleUtils.sendParticlePacket(
-                        player,
-                        location,
-                        particle,
-                        1,
-                        0D, 0D, 0D,
-                        0D,
-                        data
-                )
+                particlePackets.add(ParticleUtils.getParticlePacket(particle, location, 1, 0D, 0D, 0D, 0D, data))
         );
+        nmsPlayer.connection.send(new ClientboundBundlePacket(particlePackets));
     }
 
     /**
